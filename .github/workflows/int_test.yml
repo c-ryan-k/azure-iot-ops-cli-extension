@@ -10,9 +10,7 @@ jobs:
       fail-fast: false
       matrix:
         py:
-        #   - "3.8-int"
-        #   - "3.9-int"
-          - "3.10-int"
+          - "3.10"
     steps:
       - name: Setup python ${{ matrix.py }}
         uses: actions/setup-python@v3
@@ -50,12 +48,12 @@ jobs:
       - name: "AIO DEPLOY"
         run: |
           az iot ops init --cluster ${{ env.CLUSTER_NAME }} -g ${{ env.CLUSTER_RG }} --kv-id ${{ secrets.KV_ID }} --sp-app-id ${{ secrets.AZURE_CLIENT_ID }}
-      - name: Install tox-gh
-        run: python -m pip install tox-gh
+      - name: Install tox
+        run: python -m pip install tox
       - name: Setup test suite
-        run: tox r -vv --notest
+        run: tox r -vv --notest -e "py${{ matrix.py }}-int"
       - name: Run test suite
-        run: tox r --skip-pkg-install
+        run: tox r -vv -e "py${{ matrix.py }}-int"
       - name: decomm cluster
         if: always()
         run: |
