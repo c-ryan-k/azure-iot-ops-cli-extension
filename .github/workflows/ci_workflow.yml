@@ -10,8 +10,11 @@ on:
 jobs:
   build:
     uses: ./.github/workflows/ci_build.yml
-  test:
+  unit_test:
     uses: ./.github/workflows/tox.yml
+  int_test:
+    needs: [build]
+    uses: ./.github/workflows/int_test.yml
   linter:
     needs: [build]
     uses: ./.github/workflows/azdev_linter.yml
