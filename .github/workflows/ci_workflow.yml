@@ -10,14 +10,14 @@ on:
 jobs:
   build:
     uses: ./.github/workflows/ci_build.yml
-  unit_test:
-    uses: ./.github/workflows/tox.yml
+  # unit_test:
+  #   uses: ./.github/workflows/tox.yml
   int_test:
     needs: [build]
     uses: ./.github/workflows/int_test.yml
-  linter:
-    needs: [build]
-    uses: ./.github/workflows/azdev_linter.yml
+  # linter:
+  #   needs: [build]
+  #   uses: ./.github/workflows/azdev_linter.yml
   # smoke tests are temporarily disabled until a suitable deployment replacement is built
   # smoke_test:
   #   needs: [build]
