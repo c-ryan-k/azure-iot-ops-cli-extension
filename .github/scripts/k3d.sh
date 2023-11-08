@@ -20,9 +20,9 @@ sudo chmod +x "$k3d_binary"
 sudo cp "$k3d_binary" "$k3d_install_dir/$app"
 
 # create cluster
-k3d cluster create
-
-# install e4k, e4i, opcua
-helm install e4k oci://e4kpreview.azurecr.io/helm/az-e4k --version 0.6.0 --set global.quickstart=true --namespace azure-iot-operations
-helm upgrade -i e4i oci://e4ipreview.azurecr.io/helm/az-e4i --version 0.5.1 --namespace e4i-runtime --create-namespace --set mqttBroker.authenticationMethod="serviceAccountToken" --set mqttBroker.name="azedge-dmqtt-frontend" --set mqttBroker.namespace="default" --set opcPlcSimulation.deploy=true --wait
-helm upgrade -i opcua oci://e4ipreview.azurecr.io/helm/az-e4i-opcua-connector --version 0.5.1 --namespace opcua --create-namespace --set payloadCompression="none" --set opcUaConnector.settings.discoveryUrl="opc.tcp://opcplc.e4i-runtime:50000" --set opcUaConnector.settings.autoAcceptUntrustedCertificates=true --set mqttBroker.name="azedge-dmqtt-frontend" --set mqttBroker.namespace="default" --set mqttBroker.authenticationMethod="serviceAccountToken" --wait
+export K3D_FIX_MOUNTS=1
+k3d cluster create -i ghcr.io/jlian/k3d-nfs:v1.25.3-k3s1 \
+-p '1883:1883@loadbalancer' \
+-p '8883:8883@loadbalancer' \
+-p '6001:6001@loadbalancer' \
+-p '4000:80@loadbalancer'
