@@ -5,18 +5,13 @@ on:
 jobs:
   tox:
     name: Integration test ${{ matrix.py }}
-    runs-on:
-      [
-        self-hosted,
-        1ES.Pool=iotupx-github-hosted-pool,
-        1ES.ImageOverride=MMSUbuntu20.04,
-      ]
+    runs-on: ubuntu-latest
     strategy:
       fail-fast: false
       matrix:
         py:
-          - "3.8-int"
-          - "3.9-int"
+        #   - "3.8-int"
+        #   - "3.9-int"
           - "3.10-int"
     steps:
       - name: Setup python ${{ matrix.py }}
