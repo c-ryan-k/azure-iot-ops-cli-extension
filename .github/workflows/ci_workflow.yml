@@ -15,6 +15,7 @@ jobs:
   int_test:
     needs: [build]
     uses: ./.github/workflows/int_test.yml
+    secrets: inherit
   # linter:
   #   needs: [build]
   #   uses: ./.github/workflows/azdev_linter.yml
