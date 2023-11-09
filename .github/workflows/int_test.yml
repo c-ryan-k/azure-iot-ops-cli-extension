@@ -42,7 +42,7 @@ jobs:
       - name: "Create cluster name and RG"
         run: |
             echo "CLUSTER_NAME=az-iot-ops-ext-int-cluster-${{ github.run_id }}-${{ github.run_attempt }}" >> $GITHUB_ENV
-            echo "RG_NAME=rk-vnext-rg" >> $GITHUB_ENV
+            echo "CLUSTER_RG=rk-vnext-rg" >> $GITHUB_ENV
       - name: "ARC_CONNECT"
         run: |
           az extension add --name connectedk8s -y
