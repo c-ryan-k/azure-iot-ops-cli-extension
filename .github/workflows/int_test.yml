@@ -19,6 +19,8 @@ jobs:
       - uses: actions/checkout@v3
       - name: "SETUP CLUSTER"
         run: bash .github/scripts/k3d.sh
+      - name: "ensure CLI install"
+        run: curl -sL https://aka.ms/InstallAzureCLIDeb | sudo bash
       - name: "Az CLI login"
         uses: azure/login@v1
         with:
