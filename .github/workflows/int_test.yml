@@ -45,7 +45,7 @@ jobs:
         run: |
           az extension add --name connectedk8s -y
           az connectedk8s connect -n ${{ env.CLUSTER_NAME }} -g ${{ env.CLUSTER_RG }} -l westus2
-          az connectedk8s enable-features -n ${{ env.CLUSTER_NAME }} -g ${{ env.CLUSTER_RG }} --features custom-locations cluster-connect --custom-locations-oid ${{ secrets.AZURE_OBJECT_ID }}
+          az connectedk8s enable-features -n ${{ env.CLUSTER_NAME }} -g ${{ env.CLUSTER_RG }} --features custom-locations cluster-connect --custom-locations-oid ${{ secrets.CUSTOM_LOCATIONS_OID }}
       - name: "AIO DEPLOY"
         run: |
           az iot ops init --cluster ${{ env.CLUSTER_NAME }} -g ${{ env.CLUSTER_RG }}  --kv-id ${{ secrets.KV_ID }} --sp-app-id ${{ secrets.AZURE_CLIENT_ID }} --sp-object-id ${{ secrets.AZURE_OBJECT_ID }} --sp-secret ${{ secrets.AZURE_CLIENT_SECRET}} --cluster-location westus2
