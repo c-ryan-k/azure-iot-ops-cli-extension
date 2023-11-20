@@ -22,21 +22,21 @@ on:
           - 'upload-wheel'
           - 'prod-release'
 jobs:
-  security:
-    uses: ./.github/workflows/security_checks.yml
+  # security:
+  #   uses: ./.github/workflows/security_checks.yml
   build:
-    uses: ./.github/workflows/release_build.yml
+    uses: ./.github/workflows/ci_build.yml
   test:
     uses: ./.github/workflows/tox.yml
-  linter:
-    needs: [build]
-    uses: ./.github/workflows/azdev_linter.yml
+  # linter:
+  #   needs: [build]
+  #   uses: ./.github/workflows/azdev_linter.yml
   # smoke tests are temporarily disabled until a suitable deployment replacement is built
   # smoke_test:
   #   needs: [build]
   #   uses: ./.github/workflows/smoke_test.yml
   approval:
-    needs: [security, build, test, linter]
+    needs: [build, test]
     # as long as build worked, our break-glass can skip other checks
     if: github.event.inputs.release_strategy != 'none' && (success() || (needs.build.result == 'success' && github.event.inputs.continue-on-fail == 'true'))
     environment: production

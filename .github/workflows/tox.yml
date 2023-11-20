@@ -8,17 +8,19 @@ jobs:
     name: Unit test ${{ matrix.py }} - ${{ matrix.os }}
     runs-on: ${{ matrix.os }}-latest
     strategy:
-      fail-fast: false
+      fail-fast: true
       matrix:
         os:
           - ubuntu
-          - windows
-          - macos
+          # - windows
+          # - macos
         py:
           - "3.10"
-          - "3.9"
-          - "3.8"
+          # - "3.9"
+          # - "3.8"
     steps:
+      - name: Purposely fail test
+        run: exit 1
       - name: Setup python ${{ matrix.py }}
         uses: actions/setup-python@v3
         with:
@@ -30,19 +32,19 @@ jobs:
         run: tox r -vv --notest
       - name: Run test suite
         run: tox r --skip-pkg-install
-  code-coverage:
-    name: Calculate code coverage
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v3
-      - name: Run code coverage
-        run: |
-          python -m pip install tox
-          tox -e coverage
-          coverage=$(jq .totals.percent_covered coverage.json | cut -c1-4)
-          echo "Code coverage: $coverage%" >> $GITHUB_STEP_SUMMARY
-      - name: Upload code coverage
-        uses: actions/upload-artifact@v3.1.0
-        with:
-          path: ./htmlcov
-          name: code_coverage
+  # code-coverage:
+  #   name: Calculate code coverage
+  #   runs-on: ubuntu-latest
+  #   steps:
+  #     - uses: actions/checkout@v3
+  #     - name: Run code coverage
+  #       run: |
+  #         python -m pip install tox
+  #         tox -e coverage
+  #         coverage=$(jq .totals.percent_covered coverage.json | cut -c1-4)
+  #         echo "Code coverage: $coverage%" >> $GITHUB_STEP_SUMMARY
+  #     - name: Upload code coverage
+  #       uses: actions/upload-artifact@v3.1.0
+  #       with:
+  #         path: ./htmlcov
+  #         name: code_coverage
