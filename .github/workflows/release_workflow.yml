@@ -5,12 +5,12 @@ on:
   workflow_dispatch:
     inputs:
       continue-on-error:
-        description: Continue build even if pre-checks fail
+        description: Continue release if pre-checks fail
         type: boolean
         required: false
         default: false
       github_release:
-        description: Draft a github release
+        description: Draft github release
         type: boolean
         required: false
         default: false
@@ -50,12 +50,12 @@ jobs:
     steps:
       - name: Confirm
         run: |
-          echo "Approved"
+          echo "Approved" >> $GITHUB_STEP_SUMMARY
           if [ "${{ inputs.upload_wheel }}" == "true" ]; then
-            echo "Wheel will be uploaded to storage account."
+            echo "Wheel will be uploaded to storage account." >> $GITHUB_STEP_SUMMARY
           fi
           if [ "${{ inputs.github_release }}" == "true" ]; then
-            echo "Github release will be drafted."
+            echo "Github release will be drafted." >> $GITHUB_STEP_SUMMARY
           fi
   # github_release == 'true'
   draft_github_release:
