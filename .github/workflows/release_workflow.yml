@@ -4,7 +4,7 @@ on:
   # only manual trigger
   workflow_dispatch:
     inputs:
-      continue-on-fail:
+      continue-on-error:
         description: Continue build even if pre-checks fail
         type: boolean
         required: false
@@ -22,21 +22,29 @@ on:
 jobs:
   # security:
   #   uses: ./.github/workflows/security_checks.yml
+  #   with:
+  #     continue-on-error: ${{ github.event.inputs.continue-on-error == 'true' }}
   build:
     uses: ./.github/workflows/ci_build.yml
   test:
     uses: ./.github/workflows/tox.yml
+    with:
+      continue-on-error: ${{ github.event.inputs.continue-on-error == 'true' }}
   # linter:
   #   needs: [build]
   #   uses: ./.github/workflows/azdev_linter.yml
+  #   with:
+  #     continue-on-error: ${{ github.event.inputs.continue-on-error == 'true' }}
   # smoke tests are temporarily disabled until a suitable deployment replacement is built
   # smoke_test:
   #   needs: [build]
   #   uses: ./.github/workflows/smoke_test.yml
+  #   with:
+  #     continue-on-error: ${{ github.event.inputs.continue-on-error == 'true' }}
   approval:
     needs: [build, test]
-    # only needed if (release || wheel) AND all steps have succeeded, or build succeeded and break-glass is true
-    if: (github.event.inputs.github_release == 'true' || github.event.inputs.upload_wheel == 'true') && (success() || (needs.build.result == 'success' && github.event.inputs.continue-on-fail == 'true'))
+    # only needed if (release || wheel)
+    if: (github.event.inputs.github_release == 'true' || github.event.inputs.upload_wheel == 'true')
     environment: production
     runs-on: ubuntu-latest
     steps:
@@ -52,12 +60,12 @@ jobs:
   # github_release == 'true'
   draft_github_release:
     needs: [approval]
-    if: github.event.inputs.github_release == 'true' && (success() || needs.approval.result == 'success')
+    if: github.event.inputs.github_release == 'true'
     uses: ./.github/workflows/stage_release.yml
     secrets: inherit
   # upload_wheel == 'true'
   upload_wheel:
     needs: [approval]
-    if: github.event.inputs.upload_wheel == 'true' && (success() || needs.approval.result == 'success')
+    if: github.event.inputs.upload_wheel == 'true'
     uses: ./.github/workflows/upload_wheel.yml
     secrets: inherit
