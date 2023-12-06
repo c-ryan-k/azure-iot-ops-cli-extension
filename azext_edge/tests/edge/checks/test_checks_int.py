@@ -1,20 +1,71 @@
 import pytest
-
+from yaml import safe_load
+from os import environ
 from azext_edge.edge.common import OpsServiceType
-from azext_edge.edge.providers.base import DEFAULT_NAMESPACE, create_namespaced_custom_objects
 from azext_edge.edge.providers.check.common import ResourceOutputDetailLevel
 from azext_edge.edge.providers.checks import run_checks
-from azext_edge.edge.providers.edge_api.keyvault import KEYVAULT_API_V1, KeyVaultResourceKinds
-from azext_edge.edge.providers.orchestration.components import get_kv_secret_store_yaml
-from azext_edge.edge.providers.orchestration.work import CLUSTER_SECRET_CLASS_NAME
 
-BOOLEAN = [True, False]
+ALL_BOOLS = [True, False]
+NAMESPACE = "azure-iot-operations"
+MQTT_CERT_NAME = "mqtt-bridge-cert"
+MQTT_ENDPOINT = environ.get("MQTT_EVENTGRID_ENDPOINT", "")
+TENANT_ID = environ.get("TENANT_ID", "")
+KEYVAULT_NAME = environ.get("KEYVAULT_NAME", "")
+
+
+def generate_keyvault_cert_auth():
+    return f"""
+        keyVault:
+          vault:
+            name: {KEYVAULT_NAME}
+            directoryId: {TENANT_ID}
+            credentials:
+              servicePrincipalLocalSecretName: {NAMESPACE}
+          vaultCert:
+            name: {MQTT_CERT_NAME}
+"""
+
+
+MQ = safe_load(
+    f"""
+apiVersion: mq.iotoperations.azure.com/v1beta1
+kind: MqttBridgeConnector
+metadata:
+  name: test-mqtt-bridge
+  namespace: {NAMESPACE}
+spec:
+  image: 
+    repository: mcr.microsoft.com/azureiotoperations/mqttbridge 
+    tag: 0.1.0-preview
+    pullPolicy: IfNotPresent
+  protocol: v5
+  bridgeInstances: 1
+  clientIdPrefix: factory-gateway-
+  logLevel: debug
+  remoteBrokerConnection:
+    endpoint: {MQTT_ENDPOINT}
+    tls:
+      tlsEnabled: true
+    authentication:
+      x509:
+        {generate_keyvault_cert_auth()}
+  localBrokerConnection:
+    endpoint: aio-mq-dmqtt-frontend:8883
+    tls:
+      tlsEnabled: true
+      trustedCaCertificateConfigMap: aio-ca-trust-bundle-test-only
+    authentication:
+      kubernetes: {{}}
+"""
+)
+
 
 @pytest.mark.parametrize("detail_level", ResourceOutputDetailLevel.list())
-@pytest.mark.parametrize("as_list", BOOLEAN)
-@pytest.mark.parametrize("pre", BOOLEAN)
-@pytest.mark.parametrize("post", BOOLEAN)
-def test_mq_checks(setup_secret_provider, detail_level, as_list, pre, post):
+@pytest.mark.parametrize("as_list", ALL_BOOLS)
+@pytest.mark.parametrize("pre", ALL_BOOLS)
+@pytest.mark.parametrize("post", ALL_BOOLS)
+@pytest.mark.parametrize("create_custom_resource", [MQ], indirect=True)
+def test_mq_checks(setup_secret_provider, create_custom_resource, detail_level, as_list, pre, post):
     test = run_checks(
         detail_level=detail_level,
         ops_service=OpsServiceType.mq.value,

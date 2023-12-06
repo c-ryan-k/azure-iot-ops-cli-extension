@@ -24,6 +24,30 @@ TENANT_ID = os.environ.get("TENANT_ID", "")
 KEYVAULT_NAME = os.environ.get("KEYVAULT_NAME", "")
 SPC_PLURAL = "secretproviderclasses"
 
+@pytest.fixture(scope="session")
+def create_custom_resource(request):
+    from kubernetes import client, config, dynamic
+
+    config.load_kube_config()
+
+    # Dynamic API client workaround for utils.create_from_yaml not processing CRDs
+    # https://github.com/kubernetes-client/python/issues/1792#issuecomment-1127393010
+    DYNAMIC_CLIENT = dynamic.DynamicClient(
+        client.api_client.ApiClient()
+    )
+    resource = request.param
+    api_version = resource.get("apiVersion")
+    kind = resource.get("kind")
+    resource_name = resource.get("metadata").get("name")
+    namespace = resource.get("metadata").get("namespace")
+    crd_api = DYNAMIC_CLIENT.resources.get(api_version=api_version, kind=kind)
+
+    try:
+        crd_api.get(namespace=namespace, name=resource_name)
+        crd_api.patch(body=resource, content_type="application/merge-patch+json")
+    except dynamic.exceptions.NotFoundError:
+        crd_api.create(body=resource, namespace=namespace)
+
 
 @pytest.fixture(scope="session", autouse=True)
 def setup_secret_provider():
