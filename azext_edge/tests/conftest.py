@@ -8,6 +8,50 @@ import pytest
 import os
 
 
+from .helpers import create_spc_yaml
+from ..edge.providers.base import DEFAULT_NAMESPACE, create_namespaced_custom_objects
+from ..edge.providers.edge_api.keyvault import KEYVAULT_API_V1
+from ..edge.providers.orchestration.work import CLUSTER_SECRET_CLASS_NAME
+
+SECRET_PROVIDER_VALUES = [
+    ("azure-iot-operations", "secret"),
+    ("kafka-connector-auth", "secret"),
+    ("datalake-sas", "secret"),
+    ("mqtt-bridge-cert", "cert"),
+]
+
+TENANT_ID = os.environ.get("TENANT_ID", "")
+KEYVAULT_NAME = os.environ.get("KEYVAULT_NAME", "")
+SPC_PLURAL = "secretproviderclasses"
+
+
+@pytest.fixture(scope="session", autouse=True)
+def setup_secret_provider():
+    from kubernetes import config
+
+    # load kubeconfig
+    config.load_kube_config()
+
+    # define the SPC with secrets
+    secrets_config = create_spc_yaml(
+        keyvault_name=KEYVAULT_NAME,
+        name=CLUSTER_SECRET_CLASS_NAME,
+        namespace=DEFAULT_NAMESPACE,
+        secrets=SECRET_PROVIDER_VALUES,
+        tenantId=TENANT_ID
+    )
+
+    # update SPC
+    create_namespaced_custom_objects(
+        group=KEYVAULT_API_V1.group,
+        version=KEYVAULT_API_V1.version,
+        plural=SPC_PLURAL,
+        namespace=DEFAULT_NAMESPACE,
+        yaml_objects=[secrets_config],
+        delete_first=True,
+    )
+
+
 # Sets current working directory to the directory of the executing file
 @pytest.fixture
 def set_cwd(request):
