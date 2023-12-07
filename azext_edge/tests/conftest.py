@@ -24,7 +24,7 @@ TENANT_ID = os.environ.get("TENANT_ID", "")
 KEYVAULT_NAME = os.environ.get("KEYVAULT_NAME", "")
 SPC_PLURAL = "secretproviderclasses"
 
-@pytest.fixture(scope="session")
+@pytest.fixture(scope="function")
 def create_custom_resource(request):
     from kubernetes import client, config, dynamic
 
@@ -47,6 +47,15 @@ def create_custom_resource(request):
         crd_api.patch(body=resource, content_type="application/merge-patch+json")
     except dynamic.exceptions.NotFoundError:
         crd_api.create(body=resource, namespace=namespace)
+
+    # wait for test to finish
+    yield
+
+    # clean up after yourself
+    try:
+        crd_api.delete(namespace=namespace, name=resource_name)
+    except dynamic.exceptions.NotFoundError as ex:
+        pass
 
 
 @pytest.fixture(scope="session", autouse=True)
