@@ -21,9 +21,21 @@ SECRET_PROVIDER_VALUES = [
     ("mqtt-bridge-cert", "cert"),
 ]
 
-TENANT_ID = os.environ.get("TENANT_ID", "")
-KEYVAULT_NAME = os.environ.get("KEYVAULT_NAME", "")
+TENANT_ID = os.environ.get("AIO_TENANT_ID", "")
+KEYVAULT_NAME = os.environ.get("AIO_KEYVAULT_NAME", "")
 SPC_PLURAL = "secretproviderclasses"
+
+def generate_keyvault_cert_auth(cert_name: str):
+    return f"""
+        keyVault:
+          vault:
+            name: {KEYVAULT_NAME}
+            directoryId: {TENANT_ID}
+            credentials:
+              servicePrincipalLocalSecretName: {DEFAULT_NAMESPACE}
+          vaultCert:
+            name: {cert_name}
+"""
 
 @pytest.fixture(scope="function")
 def create_custom_resource(request):

@@ -4,26 +4,12 @@ from os import environ
 from azext_edge.edge.common import OpsServiceType
 from azext_edge.edge.providers.check.common import ResourceOutputDetailLevel
 from azext_edge.edge.providers.checks import run_checks
+from azext_edge.tests.conftest import generate_keyvault_cert_auth
 
 ALL_BOOLS = [True, False]
 NAMESPACE = "azure-iot-operations"
 MQTT_CERT_NAME = "mqtt-bridge-cert"
-MQTT_ENDPOINT = environ.get("MQTT_EVENTGRID_ENDPOINT", "")
-TENANT_ID = environ.get("TENANT_ID", "")
-KEYVAULT_NAME = environ.get("KEYVAULT_NAME", "")
-
-
-def generate_keyvault_cert_auth():
-    return f"""
-        keyVault:
-          vault:
-            name: {KEYVAULT_NAME}
-            directoryId: {TENANT_ID}
-            credentials:
-              servicePrincipalLocalSecretName: {NAMESPACE}
-          vaultCert:
-            name: {MQTT_CERT_NAME}
-"""
+MQTT_ENDPOINT = environ.get("AIO_MQTT_EVENTGRID_ENDPOINT", "")
 
 
 MQTT_BRIDGE = safe_load(
@@ -48,7 +34,7 @@ spec:
       tlsEnabled: true
     authentication:
       x509:
-        {generate_keyvault_cert_auth()}
+        {generate_keyvault_cert_auth(MQTT_CERT_NAME)}
   localBrokerConnection:
     endpoint: aio-mq-dmqtt-frontend:8883
     tls:
