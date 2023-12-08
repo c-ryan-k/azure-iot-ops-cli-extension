@@ -4,6 +4,7 @@
 # Licensed under the MIT License. See License file in the project root for license information.
 # ----------------------------------------------------------------------------------------------
 
+from typing import List, Tuple
 import pytest
 import os
 
@@ -37,37 +38,52 @@ def create_custom_resource(request):
         client.api_client.ApiClient()
     )
 
-    param = request.param
+    # track created / updated resources and whether we need to delete them
+    resources: List[Tuple] = []
 
-    resource = {}
-    # load yaml from string
-    if isinstance(param, str) and param.endswith('.yml', '.yaml'):
-        with open(resource, 'r') as file:
-            resource = safe_load(file)
-    # resource is passed as dict
-    if isinstance(param, dict):
-        resource = param
+    # parameter is a list
+    params = request.param
 
-    if not resource:
-        return
+    for param in params:
+        resource = {}
+        # try load yaml from string
+        if isinstance(param, str) and param.endswith(('.yml', '.yaml')):
+            with open(param, 'r') as file:
+                resource = safe_load(file)
+        # resource is passed as dict
+        if isinstance(param, dict):
+            resource = param
 
-    api_version = resource.get("apiVersion")
-    kind = resource.get("kind")
-    resource_name = resource.get("metadata").get("name")
-    namespace = resource.get("metadata").get("namespace")
-    crd_api = k8s_client.resources.get(api_version=api_version, kind=kind)
+        if not resource:
+            continue
 
-    try:
-        crd_api.get(namespace=namespace, name=resource_name)
-        crd_api.patch(body=resource, content_type="application/merge-patch+json")
-    except dynamic.exceptions.NotFoundError:
-        crd_api.create(body=resource, namespace=namespace)
-    finally:
-        # wait for test to finish
-        yield
+        # gather resource data
+        api_version = resource.get("apiVersion")
+        kind = resource.get("kind")
+        resource_name = resource.get("metadata").get("name")
+        namespace = resource.get("metadata").get("namespace")
+        crd_api = k8s_client.resources.get(api_version=api_version, kind=kind)
+        
+        # track which resources to delete
+        delete_resource = False
+        
+        # update resource if found, otherwise create
+        try:
+            crd_api.get(namespace=namespace, name=resource_name)
+            crd_api.patch(body=resource, content_type="application/merge-patch+json")
+        except dynamic.exceptions.NotFoundError:
+            delete_resource = True
+            crd_api.create(body=resource, namespace=namespace)
+        
+        resources.append((namespace, resource_name, delete_resource))
+    
+    # wait for test to finish
+    yield
 
+    for resource in resources:
         # clean up after yourself
-        crd_api.delete(namespace=namespace, name=resource_name)
+        if resource[2]:
+            crd_api.delete(namespace=resource[0], name=resource[1])
 
 
 @pytest.fixture(scope="session", autouse=True)

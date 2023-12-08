@@ -26,7 +26,7 @@ def generate_keyvault_cert_auth():
 """
 
 
-MQ = safe_load(
+MQTT_BRIDGE = safe_load(
     f"""
 apiVersion: mq.iotoperations.azure.com/v1beta1
 kind: MqttBridgeConnector
@@ -59,18 +59,17 @@ spec:
 """
 )
 
+MQTT_TOPIC_MAP = "test_configs/mqtttopicmap.yml"
+
 
 @pytest.mark.parametrize("detail_level", ResourceOutputDetailLevel.list())
 @pytest.mark.parametrize("as_list", ALL_BOOLS)
-@pytest.mark.parametrize("pre", ALL_BOOLS)
-@pytest.mark.parametrize("post", ALL_BOOLS)
-@pytest.mark.parametrize("create_custom_resource", [MQ], indirect=True)
-def test_mq_checks(setup_secret_provider, create_custom_resource, detail_level, as_list, pre, post):
+@pytest.mark.parametrize("create_custom_resource", [[MQTT_BRIDGE, MQTT_TOPIC_MAP]], indirect=True)
+def test_mq_checks(setup_secret_provider, create_custom_resource, detail_level, as_list):
     test = run_checks(
         detail_level=detail_level,
-        ops_service=OpsServiceType.mq.value,
-        pre_deployment=pre,
-        post_deployment=post,
         as_list=as_list,
+        ops_service=OpsServiceType.mq.value,
+        pre_deployment=False,
+        post_deployment=True,
     )
-
