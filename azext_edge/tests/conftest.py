@@ -27,35 +27,47 @@ SPC_PLURAL = "secretproviderclasses"
 @pytest.fixture(scope="function")
 def create_custom_resource(request):
     from kubernetes import client, config, dynamic
+    from yaml import safe_load
 
     config.load_kube_config()
 
     # Dynamic API client workaround for utils.create_from_yaml not processing CRDs
     # https://github.com/kubernetes-client/python/issues/1792#issuecomment-1127393010
-    DYNAMIC_CLIENT = dynamic.DynamicClient(
+    k8s_client = dynamic.DynamicClient(
         client.api_client.ApiClient()
     )
-    resource = request.param
+
+    param = request.param
+
+    resource = {}
+    # load yaml from string
+    if isinstance(param, str) and param.endswith('.yml', '.yaml'):
+        with open(resource, 'r') as file:
+            resource = safe_load(file)
+    # resource is passed as dict
+    if isinstance(param, dict):
+        resource = param
+
+    if not resource:
+        return
+
     api_version = resource.get("apiVersion")
     kind = resource.get("kind")
     resource_name = resource.get("metadata").get("name")
     namespace = resource.get("metadata").get("namespace")
-    crd_api = DYNAMIC_CLIENT.resources.get(api_version=api_version, kind=kind)
+    crd_api = k8s_client.resources.get(api_version=api_version, kind=kind)
 
     try:
         crd_api.get(namespace=namespace, name=resource_name)
         crd_api.patch(body=resource, content_type="application/merge-patch+json")
     except dynamic.exceptions.NotFoundError:
         crd_api.create(body=resource, namespace=namespace)
+    finally:
+        # wait for test to finish
+        yield
 
-    # wait for test to finish
-    yield
-
-    # clean up after yourself
-    try:
+        # clean up after yourself
         crd_api.delete(namespace=namespace, name=resource_name)
-    except dynamic.exceptions.NotFoundError as ex:
-        pass
 
 
 @pytest.fixture(scope="session", autouse=True)
