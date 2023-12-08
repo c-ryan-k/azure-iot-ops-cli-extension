@@ -44,17 +44,26 @@ jobs:
       - name: "ARC_CONNECT"
         run: |
           az extension add --name connectedk8s -y
-          az connectedk8s connect -n ${{ env.CLUSTER_NAME }} -g ${{ env.CLUSTER_RG }} -l westus2
+          az connectedk8s connect -n ${{ env.CLUSTER_NAME }} -g ${{ env.CLUSTER_RG }}
           az connectedk8s enable-features -n ${{ env.CLUSTER_NAME }} -g ${{ env.CLUSTER_RG }} --features custom-locations cluster-connect --custom-locations-oid ${{ secrets.CUSTOM_LOCATIONS_OID }}
       - name: "AIO DEPLOY"
-        run: |
-          az iot ops init --cluster ${{ env.CLUSTER_NAME }} -g ${{ env.CLUSTER_RG }}  --kv-id ${{ secrets.KV_ID }} --sp-app-id ${{ secrets.AZURE_CLIENT_ID }} --sp-object-id ${{ secrets.AZURE_OBJECT_ID }} --sp-secret ${{ secrets.AZURE_CLIENT_SECRET}} --cluster-location westus2
+        run: >
+          az iot ops init
+          --cluster ${{ env.CLUSTER_NAME }} -g ${{ env.CLUSTER_RG }}
+          --kv-id ${{ secrets.KV_ID }}
+          --sp-app-id ${{ secrets.AZURE_CLIENT_ID }}
+          --sp-object-id ${{ secrets.AZURE_OBJECT_ID }}
+          --sp-secret ${{ secrets.AZURE_CLIENT_SECRET}}
       - name: Install tox
         run: python -m pip install tox
       - name: Setup test suite
         run: tox r -vv --notest -e "py${{ matrix.py }}-int"
       - name: Run test suite
         run: tox r -vv -e "py${{ matrix.py }}-int"
+        env:
+          AIO_KEYVAULT_NAME: ${{ secrets.AIO_KEYVAULT_NAME }}
+          AIO_TENANT_ID: ${{ secrets.AIO_TENANT_ID }}
+          AIO_MQTT_EVENTGRID_ENDPOINT: ${{ secrets.AIO_MQTT_EVENTGRID_ENDPOINT }}
       - name: decomm cluster
         if: always()
         run: |
