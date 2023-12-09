@@ -4,7 +4,7 @@
 # Licensed under the MIT License. See License file in the project root for license information.
 # ----------------------------------------------------------------------------------------------
 
-from typing import List, Tuple
+from typing import List, Tuple, TypedDict
 import pytest
 import os
 
@@ -25,6 +25,7 @@ TENANT_ID = os.environ.get("AIO_TENANT_ID", "")
 KEYVAULT_NAME = os.environ.get("AIO_KEYVAULT_NAME", "")
 SPC_PLURAL = "secretproviderclasses"
 
+
 def generate_keyvault_cert_auth(cert_name: str):
     return f"""
         keyVault:
@@ -37,21 +38,27 @@ def generate_keyvault_cert_auth(cert_name: str):
             name: {cert_name}
 """
 
+
 @pytest.fixture(scope="function")
 def create_custom_resource(request):
     from kubernetes import client, config, dynamic
     from yaml import safe_load
 
+    class ApiResource(TypedDict):
+        api_version: str
+        kind: str
+        name: str
+        namespace: str
+        delete: bool
+
     config.load_kube_config()
 
     # Dynamic API client workaround for utils.create_from_yaml not processing CRDs
     # https://github.com/kubernetes-client/python/issues/1792#issuecomment-1127393010
-    k8s_client = dynamic.DynamicClient(
-        client.api_client.ApiClient()
-    )
+    k8s_client = dynamic.DynamicClient(client.api_client.ApiClient())
 
     # track created / updated resources and whether we need to delete them
-    resources: List[Tuple] = []
+    resources: List[ApiResource] = []
 
     # parameter is a list
     params = request.param
@@ -59,8 +66,8 @@ def create_custom_resource(request):
     for param in params:
         resource = {}
         # try load yaml from string
-        if isinstance(param, str) and param.endswith(('.yml', '.yaml')):
-            with open(param, 'r') as file:
+        if isinstance(param, str) and param.endswith((".yml", ".yaml")):
+            with open(param, "r") as file:
                 resource = safe_load(file)
         # resource is passed as dict
         if isinstance(param, dict):
@@ -75,10 +82,10 @@ def create_custom_resource(request):
         resource_name = resource.get("metadata").get("name")
         namespace = resource.get("metadata").get("namespace")
         crd_api = k8s_client.resources.get(api_version=api_version, kind=kind)
-        
+
         # track which resources to delete
         delete_resource = False
-        
+
         # update resource if found, otherwise create
         try:
             crd_api.get(namespace=namespace, name=resource_name)
@@ -86,16 +93,21 @@ def create_custom_resource(request):
         except dynamic.exceptions.NotFoundError:
             delete_resource = True
             crd_api.create(body=resource, namespace=namespace)
-        
-        resources.append((namespace, resource_name, delete_resource))
-    
+        resources.append(
+            ApiResource(
+                api_version=api_version, kind=kind, name=resource_name, namespace=namespace, delete=delete_resource
+            )
+        )
+
     # wait for test to finish
     yield
 
+    resource: ApiResource
     for resource in resources:
         # clean up after yourself
-        if resource[2]:
-            crd_api.delete(namespace=resource[0], name=resource[1])
+        if resource["delete"]:
+            crd_api = k8s_client.resources.get(api_version=resource["api_version"], kind=resource["kind"])
+            crd_api.delete(namespace=resource["namespace"], name=resource["name"])
 
 
 @pytest.fixture(scope="session", autouse=True)
@@ -111,7 +123,7 @@ def setup_secret_provider():
         name=CLUSTER_SECRET_CLASS_NAME,
         namespace=DEFAULT_NAMESPACE,
         secrets=SECRET_PROVIDER_VALUES,
-        tenantId=TENANT_ID
+        tenantId=TENANT_ID,
     )
 
     # update SPC
