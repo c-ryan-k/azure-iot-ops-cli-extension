@@ -15,6 +15,20 @@ on:
         type: string
         required: false
         default: 'westus2'
+    secrets:
+      AZURE_CLIENT_ID:
+        required: true
+      AZURE_TENANT_ID:
+        required: true
+      AZURE_SUBSCRIPTION_ID:
+        required: true
+      AZURE_OBJECT_ID:
+        required: true
+      AZURE_CLIENT_SECRET:
+        required: true
+      # TODO - create JIT keyvault
+      AIO_KEYVAULT_ID:
+        required: true
 
 jobs:
   test:
