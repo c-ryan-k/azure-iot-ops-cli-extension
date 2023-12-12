@@ -50,6 +50,9 @@ jobs:
         with:
           python-version: ${{ matrix.py }}
       - uses: actions/checkout@v3
+        with:
+          # ensure source checkout checks out our reference
+          repository: azure/azure-iot-ops-cli-extension
       - name: LS
         run : ls -FR
       - name: "SETUP CLUSTER"
@@ -79,13 +82,11 @@ jobs:
           client-id: ${{ secrets.AZURE_CLIENT_ID }}
           tenant-id: ${{ secrets.AZURE_TENANT_ID }}
           subscription-id: ${{ secrets.AZURE_SUBSCRIPTION_ID }}
-      - name: Build Wheel
+      - name: Build and install Wheel
         run: |
           ls -FR
           pip install wheel==0.30.0
           python -m setup bdist_wheel -d dist
-      - name: Install wheel
-        run: |
           wheel=$(find ./dist/*.whl)
           echo "wheel=$wheel" >> $GITHUB_ENV
           az extension add --source $wheel -y
