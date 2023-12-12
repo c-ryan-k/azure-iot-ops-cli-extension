@@ -10,11 +10,10 @@ on:
         description: Template to use for AIO deployment
         type: string
         required: false
-      location:
-        description: Location for resource group and cluster creation
+      resource_group:
+        description: Resource group for cluster creation. SP should have permissions to this group
         type: string
-        required: false
-        default: 'westus2'
+        required: true
     secrets:
       AZURE_CLIENT_ID:
         required: true
@@ -90,14 +89,12 @@ jobs:
           wheel=$(find ./dist/*.whl)
           echo "wheel=$wheel" >> $GITHUB_ENV
           az extension add --source $wheel -y
-      - name: "Create resource group and set cluster name"
+      - name: "Set resource group and cluster name"
         run: |
             run_suffix="${{ github.run_id }}-${{ github.run_attempt }}"
 
             CLUSTER_NAME="az-iot-ops-test-cluster-$run_suffix"
-            CLUSTER_RG="az-iot-ops-test-rg-$run_suffix"
-
-            az group create -l ${{ inputs.location }} -n $CLUSTER_RG
+            CLUSTER_RG="${{ inputs.resource_group }}"
 
             echo "CLUSTER_NAME=$CLUSTER_NAME" >> $GITHUB_ENV
             echo "CLUSTER_RG=$CLUSTER_RG" >> $GITHUB_ENV
