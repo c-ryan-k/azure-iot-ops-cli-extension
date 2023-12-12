@@ -115,10 +115,14 @@ jobs:
       #   run: python -m pip install toxhttps://github.com/c-ryan-k/workflow-test/actions/runs/7185840561
       # - name: Setup test suite
       #   run: tox r -vv --notest -e "py${{ matrix.py }}-int"
-      - name: Show workflow input value
-        run:
+      - name: Show workflow input test values
+        run: |
           echo "Template:"
           echo "${{ inputs.aio_template }}"
+          echo "Github ref:"
+          echo "${{ github.ref }}"
+          echo "${{ github.ref_name }}"
+          
       # - name: Run test suite
       #   run: tox r -vv -e "py${{ matrix.py }}-int"
       #   env:
