@@ -116,13 +116,13 @@ jobs:
           )
           echo "result=$result" >> $GITHUB_OUTPUT
       # - name: Install tox
-      #   run: python -m pip install tox
+      #   run: python -m pip install toxhttps://github.com/c-ryan-k/workflow-test/actions/runs/7185840561
       # - name: Setup test suite
       #   run: tox r -vv --notest -e "py${{ matrix.py }}-int"
-      # - name: Show workflow input value
-      #   run:
-      #     echo "Template:"
-      #     echo "${{ inputs.aio_template }}"
+      - name: Show workflow input value
+        run:
+          echo "Template:"
+          echo "${{ inputs.aio_template }}"
       # - name: Run test suite
       #   run: tox r -vv -e "py${{ matrix.py }}-int"
       #   env:
@@ -136,7 +136,3 @@ jobs:
         if: always()
         run: |
             az connectedk8s delete -n ${{ env.CLUSTER_NAME }} -g ${{ env.CLUSTER_RG }} -y
-      - name: delete resource group
-        if: always()
-        run: |
-          az group delete -n ${{ env.CLUSTER_RG }} -y
