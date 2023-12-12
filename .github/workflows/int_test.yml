@@ -102,15 +102,19 @@ jobs:
           az connectedk8s enable-features -n ${{ env.CLUSTER_NAME }} -g ${{ env.CLUSTER_RG }} --features custom-locations cluster-connect --custom-locations-oid 51dfe1e8-70c6-4de5-a08e-e18aff23d815
       - name: "AIO Deployment"
         id: aio_deploy
+        continue-on-error: true
         run: >-
-          result=$(az iot ops init
+          az iot ops init
           --cluster ${{ env.CLUSTER_NAME }} -g ${{ env.CLUSTER_RG }}
           --kv-id ${{ secrets.AIO_KEYVAULT_ID }}
           --sp-app-id ${{ secrets.AZURE_CLIENT_ID }}
           --sp-object-id ${{ secrets.AZURE_OBJECT_ID }}
-          --sp-secret ${{ secrets.AZURE_CLIENT_SECRET }})
-        
-          echo "result=$result" >> $GITHUB_OUTPUT
+          --sp-secret ${{ secrets.AZURE_CLIENT_SECRET }}
+          >> aio_deploy_result
+
+          cat aio_deploy_result
+          
+          echo "result=$(cat aio_deploy_result)" >> $GITHUB_OUTPUT
       # - name: Install tox
       #   run: python -m pip install toxhttps://github.com/c-ryan-k/workflow-test/actions/runs/7185840561
       # - name: Setup test suite
