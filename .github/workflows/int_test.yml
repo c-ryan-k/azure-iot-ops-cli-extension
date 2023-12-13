@@ -1,10 +1,6 @@
 name: Integration tests
 on:
   workflow_call:
-    outputs:
-      aio_deploy_result:
-        description: "AIO Deployment result"
-        value: ${{ jobs.test.outputs.aio_deploy_results }}
     inputs:
       resource_group:
         description: Resource group for cluster creation. SP should have permissions to this group
@@ -32,8 +28,6 @@ env:
 
 jobs:
   integration_test:
-    outputs:
-      aio_deploy_result: ${{ steps.aio_deploy_result.outputs.result }}
     permissions:
       contents: 'read'
       id-token: 'write'
@@ -115,16 +109,6 @@ jobs:
           --sp-object-id ${{ secrets.AZURE_OBJECT_ID }}
           --sp-secret ${{ secrets.AZURE_CLIENT_SECRET }}
           --no-progress
-          >> aio_deployment_result
-      - name: Output AIO deployment results
-        id: aio_deploy_result
-        run: |
-          {
-            echo 'result<<EOF'
-            cat aio_deployment_result
-            echo
-            echo EOF
-          } >> "$GITHUB_OUTPUT"
       - name: Run 'az iot ops check'
         run: |
           az iot ops check >> $GITHUB_STEP_SUMMARY
