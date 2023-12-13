@@ -103,21 +103,12 @@ jobs:
       - name: "AIO Deployment"
         id: aio_deploy
         continue-on-error: true
-        run: >-
+        run: |
           {
-          
-          echo 'result<<EOF'
-
-          az iot ops init
-          --cluster ${{ env.CLUSTER_NAME }} -g ${{ env.CLUSTER_RG }}
-          --kv-id ${{ secrets.AIO_KEYVAULT_ID }}
-          --sp-app-id ${{ secrets.AZURE_CLIENT_ID }}
-          --sp-object-id ${{ secrets.AZURE_OBJECT_ID }}
-          --sp-secret ${{ secrets.AZURE_CLIENT_SECRET }}
-          --no-progress
-
-          echo EOF
-
+            echo 'result<<EOF'
+            az iot ops init --cluster ${{ env.CLUSTER_NAME }} -g ${{ env.CLUSTER_RG }} --kv-id ${{ secrets.AIO_KEYVAULT_ID }} --sp-app-id ${{ secrets.AZURE_CLIENT_ID }} --sp-object-id ${{ secrets.AZURE_OBJECT_ID }} --sp-secret ${{ secrets.AZURE_CLIENT_SECRET }} --no-progress
+            echo
+            echo EOF
           } >> "$GITHUB_OUTPUT"
       # - name: Install tox
       #   run: python -m pip install toxhttps://github.com/c-ryan-k/workflow-test/actions/runs/7185840561
