@@ -6,10 +6,6 @@ on:
         description: "AIO Deployment result"
         value: ${{ jobs.test.outputs.aio_deploy_results }}
     inputs:
-      aio_template:
-        description: Template to use for AIO deployment
-        type: string
-        required: false
       resource_group:
         description: Resource group for cluster creation. SP should have permissions to this group
         type: string
@@ -25,14 +21,19 @@ on:
         required: true
       AZURE_CLIENT_SECRET:
         required: true
-      # TODO - create JIT keyvault
       AIO_KEYVAULT_ID:
         required: true
 
+env:
+  EXTENSION_SOURCE_DIRECTORY: "./azure-iot-ops-cli-extension"
+  CUSTOM_LOCATIONS_OID: 51dfe1e8-70c6-4de5-a08e-e18aff23d815
+  K3D_VERSION: v5.5.1
+  RUN_SUFFIX: "${{ github.run_id }}-${{ github.run_attempt }}"
+
 jobs:
-  test:
+  integration_test:
     outputs:
-      aio_deploy_result: ${{ steps.aio_deploy.outputs.result }}
+      aio_deploy_result: ${{ steps.aio_deploy_result.outputs.result }}
     permissions:
       contents: 'read'
       id-token: 'write'
@@ -48,23 +49,23 @@ jobs:
         uses: actions/setup-python@v3
         with:
           python-version: ${{ matrix.py }}
-      - uses: actions/checkout@v3
+      - name: Checkout extension source
+        uses: actions/checkout@v3
         with:
-          # ensure source checkout checks out our reference
+          # ensure source checkout uses our reference instead of calling workflow
           repository: azure/azure-iot-ops-cli-extension
-      - name: "SETUP CLUSTER"
+          path: ${{ env.EXTENSION_SOURCE_DIRECTORY }}
+      - name: k3d cluster create
         run: |
-          app="k3d"
           release_url="https://github.com/k3d-io/k3d/releases/download"
-          k3d_version="v5.5.1"
           k3d_binary="k3d-linux-amd64"
-          k3d_url="$release_url/$k3d_version/$k3d_binary"
+          k3d_url="$release_url/${{ env.K3D_VERSION }}/$k3d_binary"
           k3d_install_dir="/usr/local/bin"
 
           # install k3d
           curl -sL $k3d_url -o "$k3d_binary"
           sudo chmod +x "$k3d_binary"
-          sudo cp "$k3d_binary" "$k3d_install_dir/$app"
+          sudo cp "$k3d_binary" "$k3d_install_dir/k3d"
 
           # create cluster
           export K3D_FIX_MOUNTS=1
@@ -73,65 +74,61 @@ jobs:
           -p '8883:8883@loadbalancer' \
           -p '6001:6001@loadbalancer' \
           -p '4000:80@loadbalancer'
-      - name: "Az CLI login"
+      - name: Az CLI login
         uses: azure/login@v1
         with:
           client-id: ${{ secrets.AZURE_CLIENT_ID }}
           tenant-id: ${{ secrets.AZURE_TENANT_ID }}
           subscription-id: ${{ secrets.AZURE_SUBSCRIPTION_ID }}
-      - name: Build and install Wheel
+      - name: Build and install IoT Ops extension
         run: |
           pip install wheel==0.30.0
+          cd ${{ env.EXTENSION_SOURCE_DIRECTORY }}
           python -m setup bdist_wheel -d dist
           wheel=$(find ./dist/*.whl)
-          echo "wheel=$wheel" >> $GITHUB_ENV
           az extension add --source $wheel -y
-      - name: "Set resource group and cluster name"
+      - name: Set resource group and cluster name
         run: |
-            run_suffix="${{ github.run_id }}-${{ github.run_attempt }}"
-
-            CLUSTER_NAME="az-iot-ops-test-cluster-$run_suffix"
+            CLUSTER_NAME="az-iot-ops-test-cluster-${{ env.RUN_SUFFIX }}"
             CLUSTER_RG="${{ inputs.resource_group }}"
 
             echo "CLUSTER_NAME=$CLUSTER_NAME" >> $GITHUB_ENV
             echo "CLUSTER_RG=$CLUSTER_RG" >> $GITHUB_ENV
       - name: ARC connect cluster
-        run: |
+        run: >-
           az extension add --name connectedk8s -y
+
           az connectedk8s connect -n ${{ env.CLUSTER_NAME }} -g ${{ env.CLUSTER_RG }}
-          az connectedk8s enable-features -n ${{ env.CLUSTER_NAME }} -g ${{ env.CLUSTER_RG }} --features custom-locations cluster-connect --custom-locations-oid 51dfe1e8-70c6-4de5-a08e-e18aff23d815
-      - name: "AIO Deployment"
-        id: aio_deploy
-        continue-on-error: true
+
+          az connectedk8s enable-features
+          -n ${{ env.CLUSTER_NAME }}
+          -g ${{ env.CLUSTER_RG }}
+          --features custom-locations cluster-connect
+          --custom-locations-oid ${{ env.CUSTOM_LOCATIONS_OID }}
+      - name: AIO Deployment
+        run: >-
+          az iot ops init
+          -g ${{ env.CLUSTER_RG }}
+          --cluster ${{ env.CLUSTER_NAME }}
+          --kv-id ${{ secrets.AIO_KEYVAULT_ID }}
+          --sp-app-id ${{ secrets.AZURE_CLIENT_ID }}
+          --sp-object-id ${{ secrets.AZURE_OBJECT_ID }}
+          --sp-secret ${{ secrets.AZURE_CLIENT_SECRET }}
+          --no-progress
+          >> aio_deployment_result
+      - name: Output AIO deployment results
+        id: aio_deploy_result
         run: |
           {
             echo 'result<<EOF'
-            az iot ops init --cluster ${{ env.CLUSTER_NAME }} -g ${{ env.CLUSTER_RG }} --kv-id ${{ secrets.AIO_KEYVAULT_ID }} --sp-app-id ${{ secrets.AZURE_CLIENT_ID }} --sp-object-id ${{ secrets.AZURE_OBJECT_ID }} --sp-secret ${{ secrets.AZURE_CLIENT_SECRET }} --no-progress
+            cat aio_deployment_result
             echo
             echo EOF
           } >> "$GITHUB_OUTPUT"
-      # - name: Install tox
-      #   run: python -m pip install toxhttps://github.com/c-ryan-k/workflow-test/actions/runs/7185840561
-      # - name: Setup test suite
-      #   run: tox r -vv --notest -e "py${{ matrix.py }}-int"
-      - name: Show workflow input test values
-        run: |
-          echo "Template:"
-          echo "${{ inputs.aio_template }}"
-          echo "Github ref:"
-          echo "${{ github.ref }}"
-          echo "${{ github.ref_name }}"
-          
-      # - name: Run test suite
-      #   run: tox r -vv -e "py${{ matrix.py }}-int"
-      #   env:
-      #     AIO_KEYVAULT_NAME: ${{ secrets.AIO_KEYVAULT_NAME }}
-      #     AIO_TENANT_ID: ${{ secrets.AIO_TENANT_ID }}
-      #     AIO_MQTT_EVENTGRID_ENDPOINT: ${{ secrets.AIO_MQTT_EVENTGRID_ENDPOINT }}
-      - name: run check
+      - name: Run 'az iot ops check'
         run: |
           az iot ops check >> $GITHUB_STEP_SUMMARY
-      - name: decomm cluster
+      - name: Decommission ARC cluster
         if: always()
         run: |
             az connectedk8s delete -n ${{ env.CLUSTER_NAME }} -g ${{ env.CLUSTER_RG }} -y
