@@ -118,4 +118,4 @@ jobs:
         continue-on-error: true
         run: |
             az connectedk8s delete -n ${{ env.CLUSTER_NAME }} -g ${{ env.CLUSTER_RG }} -y
-            az keyvault delete -n ${{ env.KV_NAME }} -g ${{ env.CLUSTER_RG }} -y
+            az keyvault delete -n ${{ env.KV_NAME }} -g ${{ env.CLUSTER_RG }}
