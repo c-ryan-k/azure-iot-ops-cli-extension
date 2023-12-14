@@ -6,6 +6,7 @@ on:
         description: Resource group for cluster creation. SP should have permissions to this group
         type: string
         required: true
+        default: ops-cli-int-test-rg
     secrets:
       AZURE_CLIENT_ID:
         required: true
@@ -16,8 +17,6 @@ on:
       AZURE_OBJECT_ID:
         required: true
       AZURE_CLIENT_SECRET:
-        required: true
-      AIO_KEYVAULT_ID:
         required: true
 
 env:
@@ -81,13 +80,15 @@ jobs:
           python -m setup bdist_wheel -d dist
           wheel=$(find ./dist/*.whl)
           az extension add --source $wheel -y
-      - name: Set resource group and cluster name
+      - name: Set resource group, keyvault, and cluster name
         run: |
             CLUSTER_NAME="az-iot-ops-test-cluster-${{ env.RUN_SUFFIX }}"
             CLUSTER_RG="${{ inputs.resource_group }}"
+            KV_NAME="az-iot-ops-test-kv-${{ env.RUN_SUFFIX }}"
 
             echo "CLUSTER_NAME=$CLUSTER_NAME" >> $GITHUB_ENV
             echo "CLUSTER_RG=$CLUSTER_RG" >> $GITHUB_ENV
+            echo "KV_NAME=$KV_NAME" >> $GITHUB_ENV
       - name: ARC connect cluster
         run: >-
           az extension add --name connectedk8s -y
@@ -104,7 +105,7 @@ jobs:
           az iot ops init
           -g ${{ env.CLUSTER_RG }}
           --cluster ${{ env.CLUSTER_NAME }}
-          --kv-id ${{ secrets.AIO_KEYVAULT_ID }}
+          --kv-id $(az keyvault create -n ${{ env.KV_NAME }} -g ${{ env.CLUSTER_RG }} -o tsv --query id)
           --sp-app-id ${{ secrets.AZURE_CLIENT_ID }}
           --sp-object-id ${{ secrets.AZURE_OBJECT_ID }}
           --sp-secret ${{ secrets.AZURE_CLIENT_SECRET }}
@@ -112,7 +113,9 @@ jobs:
       - name: Run 'az iot ops check'
         run: |
           az iot ops check >> $GITHUB_STEP_SUMMARY
-      - name: Decommission ARC cluster
+      - name: Clean up resources
         if: always()
+        continue-on-error: true
         run: |
             az connectedk8s delete -n ${{ env.CLUSTER_NAME }} -g ${{ env.CLUSTER_RG }} -y
+            az keyvault delete -n ${{ env.KV_NAME }} -g ${{ env.CLUSTER_RG }} -y
