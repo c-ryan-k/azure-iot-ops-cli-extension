@@ -5,7 +5,7 @@ on:
       resource_group:
         description: Resource group for cluster creation. SP should have permissions to this group
         type: string
-        required: true
+        required: false
         default: ops-cli-int-test-rg
     secrets:
       AZURE_CLIENT_ID:
