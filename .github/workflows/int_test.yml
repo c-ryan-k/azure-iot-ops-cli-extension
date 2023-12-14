@@ -84,7 +84,7 @@ jobs:
         run: |
             CLUSTER_NAME="az-iot-ops-test-cluster-${{ env.RUN_SUFFIX }}"
             CLUSTER_RG="${{ inputs.resource_group }}"
-            KV_NAME="az-iot-ops-test-kv-${{ env.RUN_SUFFIX }}"
+            KV_NAME="opstestkv-${{ env.RUN_SUFFIX }}"
 
             echo "CLUSTER_NAME=$CLUSTER_NAME" >> $GITHUB_ENV
             echo "CLUSTER_RG=$CLUSTER_RG" >> $GITHUB_ENV
