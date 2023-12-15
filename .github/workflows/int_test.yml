@@ -124,5 +124,5 @@ jobs:
         if: always()
         continue-on-error: true
         run: |
-            az connectedk8s delete -n ${{ env.CLUSTER_NAME }} -g ${{ env.CLUSTER_RG }} -y --no-wait
+            az connectedk8s delete -n ${{ env.CLUSTER_NAME }} -g ${{ env.CLUSTER_RG }} -y --no-wait --force
             az keyvault delete -n ${{ env.KV_NAME }} -g ${{ env.CLUSTER_RG }} --no-wait
