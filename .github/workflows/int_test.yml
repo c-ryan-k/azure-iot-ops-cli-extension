@@ -3,7 +3,7 @@ on:
   workflow_call:
     inputs:
       resource_group:
-        description: Resource group for cluster creation. SP should have permissions to this group
+        description: Resource group for cluster creation
         type: string
         required: false
         default: ops-cli-int-test-rg
@@ -18,6 +18,13 @@ on:
         required: true
       AZURE_CLIENT_SECRET:
         required: true
+  workflow_dispatch:
+    inputs:
+      resource_group:
+        description: Resource group for cluster creation
+        type: string
+        required: false
+        default: ops-cli-int-test-rg
 
 env:
   EXTENSION_SOURCE_DIRECTORY: "./azure-iot-ops-cli-extension"
