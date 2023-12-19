@@ -119,6 +119,9 @@ jobs:
           --no-progress
       - name: Run 'az iot ops check'
         run: |
+          echo "## Run checks" >> $GITHUB_STEP_SUMMARY
+          echo "---" >> $GITHUB_STEP_SUMMARY
+          
           az iot ops check >> $GITHUB_STEP_SUMMARY
       - name: Clean up resources
         if: always()
@@ -130,18 +133,22 @@ jobs:
             starts_with_cluster_name="starts_with(name, '${{ env.CLUSTER_NAME }}')"
             mq_type="Microsoft.iotoperationsmq/mq"
 
+            echo "---" >> $GITHUB_STEP_SUMMARY
+            echo "## Resource Cleanup" >> $GITHUB_STEP_SUMMARY
+            echo "---" >> $GITHUB_STEP_SUMMARY
+
             ## Delete ARC instance ##
-            echo "# Deleting ARC instance" >> $GITHUB_STEP_SUMMARY
+            echo "### Deleting ARC instance" >> $GITHUB_STEP_SUMMARY
             az connectedk8s delete -n ${{ env.CLUSTER_NAME }} -g ${{ env.CLUSTER_RG }} -y --no-wait --force
             echo "- Deleted ARC instance ${{ env.CLUSTER_NAME }}" >> $GITHUB_STEP_SUMMARY
 
             ## Delete keyvault ##
-            echo "# Deleting Keyvault instance" >> $GITHUB_STEP_SUMMARY
+            echo "### Deleting Keyvault instance" >> $GITHUB_STEP_SUMMARY
             az keyvault delete -n ${{ env.KV_NAME }} -g ${{ env.CLUSTER_RG }} --no-wait
             echo "- Deleted Keyvault ${{ env.KV_NAME }}" >> $GITHUB_STEP_SUMMARY
 
             ## Delete CustomLocations, Orchestrator, DataProcessor ##
-            echo "# Deleting CustomLocations, Orchestrator, DataProcessor resources" >> $GITHUB_STEP_SUMMARY
+            echo "### Deleting CustomLocations, Orchestrator, DataProcessor resources" >> $GITHUB_STEP_SUMMARY
             for resource in $(az resource list -g ${{ env.CLUSTER_RG }} --query "[?$starts_with_cluster_name].id" -o tsv); do
               echo "deleting resource $resource"
               az resource delete --id $resource
@@ -149,15 +156,16 @@ jobs:
             done
 
             ## MQ cleanup ##
-            echo "# Deleting MQ child resources" >> $GITHUB_STEP_SUMMARY
+            echo "### Deleting MQ child resources" >> $GITHUB_STEP_SUMMARY
             for mq_resource in $(az resource list -g ${{ env.CLUSTER_RG }} --query "[?$in_cluster_ext_loc && $is_mq_child_resource].id" -o tsv); do
               echo "deleting MQ child resource $mq_resource"
               az resource delete --id $mq_resource
               echo "- Deleted MQ child resource $mq_resource" >> $GITHUB_STEP_SUMMARY
             done
             
-            echo "# Deleting MQ Instance" >> $GITHUB_STEP_SUMMARY
+            echo "### Deleting MQ Instance" >> $GITHUB_STEP_SUMMARY
             mq=$(az resource list -g ${{ env.CLUSTER_RG }} --resource-type $mq_type  --query "[?$in_cluster_ext_loc].id | [0]" -o tsv)
+            sleep 10s
             echo "deleting MQ instance $mq"
             az resource delete --id $mq
             echo "- Deleted MQ instance $mq" >> $GITHUB_STEP_SUMMARY
