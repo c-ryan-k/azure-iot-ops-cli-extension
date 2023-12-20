@@ -30,25 +30,26 @@ env:
   EXTENSION_SOURCE_DIRECTORY: "./azure-iot-ops-cli-extension"
   CUSTOM_LOCATIONS_OID: 51dfe1e8-70c6-4de5-a08e-e18aff23d815
   K3D_VERSION: v5.5.1
-  RUN_SUFFIX: "${{ github.run_id }}-${{ github.run_attempt }}"
+  CLUSTER_RG: ${{ inputs.resource_group }}
+  KV_NAME: "opstestkv-${{ github.run_id }}-${{ github.run_attempt }}"
+  CLUSTER_NAME: "az-iot-ops-test-cluster-${{ github.run_id }}-${{ github.run_attempt }}"
 
 jobs:
   integration_test:
     permissions:
       contents: 'read'
       id-token: 'write'
-    name: Integration test ${{ matrix.py }}
+    name: Integration test
     runs-on: ubuntu-latest
-    strategy:
-      fail-fast: false
-      matrix:
-        py:
-          - "3.10"
+    outputs:
+      cluster_name: ${{ env.CLUSTER_NAME }}
+      resource_group: ${{ env.CLUSTER_RG }}
+      keyvault_name: ${{ env.KV_NAME }}
     steps:
-      - name: Setup python ${{ matrix.py }}
+      - name: Setup python
         uses: actions/setup-python@v3
         with:
-          python-version: ${{ matrix.py }}
+          python-version: "3.10"
       - name: Checkout extension source
         uses: actions/checkout@v3
         with:
@@ -87,15 +88,6 @@ jobs:
           python -m setup bdist_wheel -d dist
           wheel=$(find ./dist/*.whl)
           az extension add --source $wheel -y
-      - name: Set resource group, keyvault, and cluster name
-        run: |
-            CLUSTER_NAME="az-iot-ops-test-cluster-${{ env.RUN_SUFFIX }}"
-            CLUSTER_RG="${{ inputs.resource_group }}"
-            KV_NAME="opstestkv-${{ env.RUN_SUFFIX }}"
-
-            echo "CLUSTER_NAME=$CLUSTER_NAME" >> $GITHUB_ENV
-            echo "CLUSTER_RG=$CLUSTER_RG" >> $GITHUB_ENV
-            echo "KV_NAME=$KV_NAME" >> $GITHUB_ENV
       - name: ARC connect cluster
         run: >-
           az extension add --name connectedk8s -y
@@ -122,52 +114,12 @@ jobs:
           echo "## Run checks" >> $GITHUB_STEP_SUMMARY
           echo "---" >> $GITHUB_STEP_SUMMARY
           az iot ops check >> $GITHUB_STEP_SUMMARY
-      - name: Clean up resources
-        if: always()
-        continue-on-error: true
-        run: |
-            ## Conditionals ##
-            in_cluster_ext_loc="contains(extendedLocation.name, '${{ env.CLUSTER_NAME }}')"
-            is_mq_child_resource="contains(type, 'Microsoft.IoTOperationsMQ/mq/')"
-            starts_with_cluster_name="starts_with(name, '${{ env.CLUSTER_NAME }}')"
-            mq_type="Microsoft.IoTOperationsMQ/mq"
-
-            echo "---" >> $GITHUB_STEP_SUMMARY
-            echo "## Resource Cleanup" >> $GITHUB_STEP_SUMMARY
-            echo "---" >> $GITHUB_STEP_SUMMARY
-
-            ## Delete ARC instance ##
-            echo "### Deleting ARC instance" >> $GITHUB_STEP_SUMMARY
-            az connectedk8s delete -n ${{ env.CLUSTER_NAME }} -g ${{ env.CLUSTER_RG }} -y --no-wait --force
-            echo "- Deleted ARC instance ${{ env.CLUSTER_NAME }}" >> $GITHUB_STEP_SUMMARY
-
-            ## Delete keyvault ##
-            echo "### Deleting Keyvault instance" >> $GITHUB_STEP_SUMMARY
-            az keyvault delete -n ${{ env.KV_NAME }} -g ${{ env.CLUSTER_RG }} --no-wait
-            echo "- Deleted Keyvault ${{ env.KV_NAME }}" >> $GITHUB_STEP_SUMMARY
-
-            ## Delete CustomLocations, Orchestrator, DataProcessor ##
-            echo "### Deleting CustomLocations, Orchestrator, DataProcessor resources" >> $GITHUB_STEP_SUMMARY
-            for resource in $(az resource list -g ${{ env.CLUSTER_RG }} --query "[?$starts_with_cluster_name].id" -o tsv); do
-              echo "deleting resource $resource"
-              az resource delete --id $resource
-              echo "- Deleted resource $resource" >> $GITHUB_STEP_SUMMARY
-            done
-
-            ## MQ cleanup ##
-            echo "### Deleting MQ child resources" >> $GITHUB_STEP_SUMMARY
-            for mq_resource in $(az resource list -g ${{ env.CLUSTER_RG }} --query "[?$in_cluster_ext_loc && $is_mq_child_resource].id" -o tsv); do
-              echo "deleting MQ child resource $mq_resource"
-              az resource delete --id $mq_resource
-              echo "- Deleted MQ child resource $mq_resource" >> $GITHUB_STEP_SUMMARY
-            done
-            
-            echo "### Deleting MQ Instance" >> $GITHUB_STEP_SUMMARY
-            mq=$(az resource list -g ${{ env.CLUSTER_RG }} --resource-type $mq_type  --query "[?$in_cluster_ext_loc].id | [0]" -o tsv)
-            sleep 10s
-            echo "deleting MQ instance $mq"
-            az resource delete --id $mq
-            echo "- Deleted MQ instance $mq" >> $GITHUB_STEP_SUMMARY
-
-
-
+  cleanup:
+    needs: [integration_test]
+    uses: './.github/workflows/cluster_cleanup.yml'
+    with:
+      cluster_name: ${{ needs.integration_test.outputs.cluster_name }}
+      resource_group: ${{ needs.integration_test.outputs.resource_group }}
+      keyvault_name: ${{ needs.integration_test.outputs.keyvault_name }}
+    secrets: inherit
+        

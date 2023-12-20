@@ -51,9 +51,9 @@ jobs:
         run: |
           echo "## Resource Cleanup" >> $GITHUB_STEP_SUMMARY
           echo "---" >> $GITHUB_STEP_SUMMARY
-          echo "Resource Group: ${{ env.RESOURCE_GROUP }}"
-          echo "Cluster Selector: ${{ env.CLUSTER_PREFIX }}"
-          echo "Keyvault Selector: ${{ env.KEYVAULT_PREFIX }}"
+          echo "Resource Group: ${{ env.RESOURCE_GROUP }}" >> $GITHUB_STEP_SUMMARY
+          echo "Cluster Selector: ${{ env.CLUSTER_PREFIX }}" >> $GITHUB_STEP_SUMMARY
+          echo "Keyvault Selector: ${{ env.KEYVAULT_PREFIX }}" >> $GITHUB_STEP_SUMMARY
           echo "---" >> $GITHUB_STEP_SUMMARY
       - name: Az CLI login
         uses: azure/login@v1
@@ -123,7 +123,7 @@ jobs:
             az resource delete --id $mq_resource
             echo "- Deleted MQ child resource $mq_resource" >> $GITHUB_STEP_SUMMARY
           done
-      - name: Delete MQ Instance
+      - name: Delete MQ Instances
         run: |
           mq_type="Microsoft.IoTOperationsMQ/mq"
           in_cluster_ext_loc="contains(extendedLocation.name, '${{ env.CLUSTER_PREFIX }}')"
