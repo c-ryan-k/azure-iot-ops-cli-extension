@@ -121,7 +121,6 @@ jobs:
         run: |
           echo "## Run checks" >> $GITHUB_STEP_SUMMARY
           echo "---" >> $GITHUB_STEP_SUMMARY
-          
           az iot ops check >> $GITHUB_STEP_SUMMARY
       - name: Clean up resources
         if: always()
@@ -131,7 +130,7 @@ jobs:
             in_cluster_ext_loc="contains(extendedLocation.name, '${{ env.CLUSTER_NAME }}')"
             is_mq_child_resource="contains(type, 'Microsoft.IoTOperationsMQ/mq/')"
             starts_with_cluster_name="starts_with(name, '${{ env.CLUSTER_NAME }}')"
-            mq_type="Microsoft.iotoperationsmq/mq"
+            mq_type="Microsoft.IoTOperationsMQ/mq"
 
             echo "---" >> $GITHUB_STEP_SUMMARY
             echo "## Resource Cleanup" >> $GITHUB_STEP_SUMMARY
