@@ -113,9 +113,10 @@ jobs:
           tenant-id: ${{ secrets.AZURE_TENANT_ID }}
           subscription-id: ${{ secrets.AZURE_SUBSCRIPTION_ID }}
       - name: Delete MQ Resources
+        # https://github.com/Azure/azure-cli/issues/9486 - to_string required
         run: |
-          is_mq_child_resource="contains(type, 'Microsoft.IoTOperationsMQ/mq/')"
-          in_cluster_ext_loc="contains(extendedLocation.name, '${{ env.CLUSTER_PREFIX }}')"
+          is_mq_child_resource="contains(to_string(type), 'Microsoft.IoTOperationsMQ/mq/')"
+          in_cluster_ext_loc="contains(to_string(extendedLocation.name), '${{ env.CLUSTER_PREFIX }}')"
 
           echo "### Deleting MQ child resources" >> $GITHUB_STEP_SUMMARY
           for mq_resource in $(az resource list -g ${{ env.RESOURCE_GROUP }} --query "[?$in_cluster_ext_loc && $is_mq_child_resource].id" -o tsv); do
@@ -126,7 +127,7 @@ jobs:
       - name: Delete MQ Instances
         run: |
           mq_type="Microsoft.IoTOperationsMQ/mq"
-          in_cluster_ext_loc="contains(extendedLocation.name, '${{ env.CLUSTER_PREFIX }}')"
+          in_cluster_ext_loc="contains(to_string(extendedLocation.name), '${{ env.CLUSTER_PREFIX }}')"
           
           # MQ instance cannot be deleted until all child resources have successfully deleted
           sleep 15s
