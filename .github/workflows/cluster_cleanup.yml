@@ -63,11 +63,10 @@ jobs:
           subscription-id: ${{ secrets.AZURE_SUBSCRIPTION_ID }}
       - name: Delete ARC Instances
         run: |
-          az extension add --name connectedk8s -y
-          
+          cluster_type="Microsoft.Kubernetes/connectedClusters"
           echo "### Deleting ARC instances" >> $GITHUB_STEP_SUMMARY
-          for cluster in $(az connectedk8s list -g ${{ env.RESOURCE_GROUP }} --query "[?starts_with(name, '${{ env.CLUSTER_PREFIX }}')].name" -o tsv); do
-            az connectedk8s delete -n $cluster -g ${{ env.RESOURCE_GROUP }} -y --no-wait --force
+          for cluster in $(az resource list -g ${{ env.RESOURCE_GROUP }} --resource-type $cluster_type --query "[?starts_with(name, '${{ env.CLUSTER_PREFIX }}')].id" -o tsv); do
+            az resource delete --id $cluster
             echo "- Deleted ARC instance $cluster" >> $GITHUB_STEP_SUMMARY
           done
   keyvault-cleanup:
