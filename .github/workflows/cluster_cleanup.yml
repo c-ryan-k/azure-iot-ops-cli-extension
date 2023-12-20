@@ -39,6 +39,10 @@ env:
   CLUSTER_PREFIX: ${{ inputs.cluster_name || 'az-iot-ops-test-cluster' }}
   KEYVAULT_PREFIX: ${{ inputs.keyvault_name || 'opstestkv' }}
 
+permissions:
+  contents: 'read'
+  id-token: 'write'
+
 jobs:
   arc-cleanup:
     runs-on: ubuntu-latest
