@@ -109,6 +109,9 @@ jobs:
           --sp-object-id ${{ secrets.AZURE_OBJECT_ID }}
           --sp-secret ${{ secrets.AZURE_CLIENT_SECRET }}
           --no-progress
+      - name: Allow cluster to finish provisioning
+        run: |
+          sleep 1m
       - name: Run 'az iot ops check'
         run: |
           echo "## Run checks" >> $GITHUB_STEP_SUMMARY

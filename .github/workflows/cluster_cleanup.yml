@@ -28,7 +28,7 @@ on:
       resource_group:
         type: string
         description: "Resource group to clean up"
-        required: false
+        required: true
         default: ops-cli-int-test-rg
   # Run every night at midnight to cleanup resources
   schedule:
