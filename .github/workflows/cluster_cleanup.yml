@@ -66,7 +66,7 @@ jobs:
           cluster_type="Microsoft.Kubernetes/connectedClusters"
           echo "### Deleting ARC instances" >> $GITHUB_STEP_SUMMARY
           for cluster in $(az resource list -g ${{ env.RESOURCE_GROUP }} --resource-type $cluster_type --query "[?starts_with(name, '${{ env.CLUSTER_PREFIX }}')].id" -o tsv); do
-            az resource delete --id $cluster
+            az resource delete --id $cluster --verbose
             echo "- Deleted ARC instance $cluster" >> $GITHUB_STEP_SUMMARY
           done
   keyvault-cleanup:
@@ -99,7 +99,7 @@ jobs:
           echo "### Deleting CustomLocations, Orchestrator, DataProcessor resources" >> $GITHUB_STEP_SUMMARY
           for resource in $(az resource list -g ${{ env.RESOURCE_GROUP }} --query "[?starts_with(name, '${{ env.CLUSTER_PREFIX }}')].id" -o tsv); do
             echo "deleting resource $resource"
-            az resource delete --id $resource
+            az resource delete --id $resource --verbose
             echo "- Deleted resource $resource" >> $GITHUB_STEP_SUMMARY
           done
   mq-cleanup:
@@ -120,7 +120,7 @@ jobs:
           echo "### Deleting MQ child resources" >> $GITHUB_STEP_SUMMARY
           for mq_resource in $(az resource list -g ${{ env.RESOURCE_GROUP }} --query "[?$in_cluster_ext_loc && $is_mq_child_resource].id" -o tsv); do
             echo "deleting MQ child resource $mq_resource"
-            az resource delete --id $mq_resource
+            az resource delete --id $mq_resource --verbose
             echo "- Deleted MQ child resource $mq_resource" >> $GITHUB_STEP_SUMMARY
           done
       - name: Delete MQ Instances
@@ -133,6 +133,6 @@ jobs:
           echo "### Deleting MQ Instances" >> $GITHUB_STEP_SUMMARY
           for mq in $(az resource list -g ${{ env.RESOURCE_GROUP }} --resource-type $mq_type  --query "[?$in_cluster_ext_loc].id" -o tsv); do
             echo "deleting MQ instance $mq"
-            az resource delete --id $mq
+            az resource delete --id $mq --verbose
             echo "- Deleted MQ instance $mq" >> $GITHUB_STEP_SUMMARY
           done
