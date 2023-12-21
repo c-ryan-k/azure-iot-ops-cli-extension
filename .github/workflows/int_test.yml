@@ -7,6 +7,11 @@ on:
         type: string
         required: false
         default: ops-cli-int-test-rg
+      cleanup:
+        description: Attempt to cleanup resources after testing
+        type: boolean
+        required: false
+        default: false
     secrets:
       AZURE_CLIENT_ID:
         required: true
@@ -25,6 +30,11 @@ on:
         type: string
         required: false
         default: ops-cli-int-test-rg
+      cleanup:
+        description: Attempt to cleanup resources after testing
+        type: boolean
+        required: false
+        default: false
 
 env:
   EXTENSION_SOURCE_DIRECTORY: "./azure-iot-ops-cli-extension"
@@ -114,15 +124,15 @@ jobs:
           sleep 1m
       - name: Run 'az iot ops check'
         run: |
-          echo "## Run checks" >> $GITHUB_STEP_SUMMARY
+          echo "### Run checks" >> $GITHUB_STEP_SUMMARY
           echo "---" >> $GITHUB_STEP_SUMMARY
           az iot ops check >> $GITHUB_STEP_SUMMARY
   cleanup:
     needs: [integration_test]
+    if: ${{ github.event.inputs.cleanup == 'true' }}
     uses: './.github/workflows/cluster_cleanup.yml'
     with:
       cluster_name: ${{ needs.integration_test.outputs.cluster_name }}
       resource_group: ${{ needs.integration_test.outputs.resource_group }}
       keyvault_name: ${{ needs.integration_test.outputs.keyvault_name }}
     secrets: inherit
-        

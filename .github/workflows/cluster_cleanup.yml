@@ -112,7 +112,6 @@ jobs:
           tenant-id: ${{ secrets.AZURE_TENANT_ID }}
           subscription-id: ${{ secrets.AZURE_SUBSCRIPTION_ID }}
       - name: Delete MQ Resources
-        # https://github.com/Azure/azure-cli/issues/9486 - to_string required
         run: |
           is_mq_child_resource="contains(to_string(type), 'Microsoft.IoTOperationsMQ/mq/')"
           in_cluster_ext_loc="contains(to_string(extendedLocation.name), '${{ env.CLUSTER_PREFIX }}')"
