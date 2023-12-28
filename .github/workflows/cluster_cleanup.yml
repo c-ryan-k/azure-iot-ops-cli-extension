@@ -47,14 +47,6 @@ jobs:
   arc-cleanup:
     runs-on: ubuntu-latest
     steps:
-      - name: Prepare summary with inputs
-        run: |
-          echo "## Resource Cleanup" >> $GITHUB_STEP_SUMMARY
-          echo "---" >> $GITHUB_STEP_SUMMARY
-          echo "Resource Group: ${{ env.RESOURCE_GROUP }}" >> $GITHUB_STEP_SUMMARY
-          echo "Cluster Selector: ${{ env.CLUSTER_PREFIX }}" >> $GITHUB_STEP_SUMMARY
-          echo "Keyvault Selector: ${{ env.KEYVAULT_PREFIX }}" >> $GITHUB_STEP_SUMMARY
-          echo "---" >> $GITHUB_STEP_SUMMARY
       - name: Az CLI login
         uses: azure/login@v1
         with:
@@ -64,10 +56,8 @@ jobs:
       - name: Delete ARC Instances
         run: |
           cluster_type="Microsoft.Kubernetes/connectedClusters"
-          echo "### Deleting ARC instances" >> $GITHUB_STEP_SUMMARY
           for cluster in $(az resource list -g ${{ env.RESOURCE_GROUP }} --resource-type $cluster_type --query "[?starts_with(name, '${{ env.CLUSTER_PREFIX }}')].id" -o tsv); do
             az resource delete --id $cluster --verbose
-            echo "- Deleted ARC instance $cluster" >> $GITHUB_STEP_SUMMARY
           done
   keyvault-cleanup:
     runs-on: ubuntu-latest
@@ -80,10 +70,8 @@ jobs:
           subscription-id: ${{ secrets.AZURE_SUBSCRIPTION_ID }}
       - name: Delete Keyvaults
         run: |
-          echo "### Deleting Keyvault instance" >> $GITHUB_STEP_SUMMARY
           for vault in $(az keyvault list --query "[?starts_with(name, '${{ env.KEYVAULT_PREFIX }}')].name" -o tsv); do
             az keyvault delete -n $vault -g ${{ env.RESOURCE_GROUP }} --no-wait
-            echo "- Deleted Keyvault $vault" >> $GITHUB_STEP_SUMMARY
           done
   resource-cleanup:
     needs: [arc-cleanup]
@@ -97,11 +85,8 @@ jobs:
           subscription-id: ${{ secrets.AZURE_SUBSCRIPTION_ID }}
       - name: Delete Custom Location Resources
         run: |
-          echo "### Deleting CustomLocations, Orchestrator, DataProcessor resources" >> $GITHUB_STEP_SUMMARY
           for resource in $(az resource list -g ${{ env.RESOURCE_GROUP }} --query "[?starts_with(name, '${{ env.CLUSTER_PREFIX }}')].id" -o tsv); do
-            echo "deleting resource $resource"
             az resource delete --id $resource --verbose
-            echo "- Deleted resource $resource" >> $GITHUB_STEP_SUMMARY
           done
   mq-cleanup:
     runs-on: ubuntu-latest
@@ -117,11 +102,8 @@ jobs:
           is_mq_child_resource="contains(to_string(type), 'Microsoft.IoTOperationsMQ/mq/')"
           in_cluster_ext_loc="contains(to_string(extendedLocation.name), '${{ env.CLUSTER_PREFIX }}')"
 
-          echo "### Deleting MQ child resources" >> $GITHUB_STEP_SUMMARY
           for mq_resource in $(az resource list -g ${{ env.RESOURCE_GROUP }} --query "[?$in_cluster_ext_loc && $is_mq_child_resource].id" -o tsv); do
-            echo "deleting MQ child resource $mq_resource"
             az resource delete --id $mq_resource --verbose
-            echo "- Deleted MQ child resource $mq_resource" >> $GITHUB_STEP_SUMMARY
           done
       - name: Delete MQ Instances
         run: |
@@ -130,9 +112,7 @@ jobs:
           
           # MQ instance cannot be deleted until all child resources have successfully deleted
           sleep 15s
-          echo "### Deleting MQ Instances" >> $GITHUB_STEP_SUMMARY
+
           for mq in $(az resource list -g ${{ env.RESOURCE_GROUP }} --resource-type $mq_type  --query "[?$in_cluster_ext_loc].id" -o tsv); do
-            echo "deleting MQ instance $mq"
             az resource delete --id $mq --verbose
-            echo "- Deleted MQ instance $mq" >> $GITHUB_STEP_SUMMARY
           done
