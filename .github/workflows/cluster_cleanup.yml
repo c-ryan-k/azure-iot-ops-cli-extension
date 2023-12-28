@@ -86,6 +86,7 @@ jobs:
             echo "- Deleted Keyvault $vault" >> $GITHUB_STEP_SUMMARY
           done
   resource-cleanup:
+    needs: [arc-cleanup]
     runs-on: ubuntu-latest
     steps:
       - name: Az CLI login
