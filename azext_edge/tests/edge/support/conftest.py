@@ -344,7 +344,7 @@ def mocked_list_daemonsets(mocked_client):
         daemonset_names = ["mock_daemonset"]
         if "label_selector" in kwargs and kwargs["label_selector"] is None:
             daemonset_names.extend(
-                ["aio-akri-agent-daemonset", "akri-opcua-asset-discovery-daemonset", "svclb-aio-lnm-operator"]
+                ["aio-akri-agent-daemonset", "svclb-aio-lnm-operator"]
             )
 
         daemonset_list = []
@@ -369,7 +369,13 @@ def mocked_mq_active_api(mocker):
 
 @pytest.fixture
 def mocked_mq_get_traces(mocker):
+    from zipfile import ZipInfo
+
+    test_zipinfo = ZipInfo("trace_key")
+    test_zipinfo.file_size = 0
+    test_zipinfo.compress_size = 0
+
     # Supports --mq-traces
     patched_get_traces = mocker.patch("azext_edge.edge.providers.support.mq.get_traces")
-    patched_get_traces.return_value = [("trace_key", "trace_data")]
+    patched_get_traces.return_value = [(test_zipinfo, "trace_data")]
     yield patched_get_traces

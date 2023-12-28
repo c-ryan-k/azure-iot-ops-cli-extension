@@ -10,7 +10,7 @@ from knack.log import get_logger
 
 from azure.cli.core.azclierror import RequiredArgumentMissingError
 
-from .providers.assets import AssetProvider
+from .providers.rpsaas.adr.assets import AssetProvider
 
 logger = get_logger(__name__)
 
@@ -93,15 +93,11 @@ def delete_asset(
     resource_group_name: str,
 ) -> dict:
     asset_provider = AssetProvider(cmd)
-    return asset_provider.delete(asset_name=asset_name, resource_group_name=resource_group_name)
-
-
-def list_assets(
-    cmd,
-    resource_group_name: Optional[str] = None,
-) -> dict:
-    asset_provider = AssetProvider(cmd)
-    return asset_provider.list(resource_group_name=resource_group_name)
+    return asset_provider.delete(
+        resource_name=asset_name,
+        resource_group_name=resource_group_name,
+        check_cluster_connectivity=True
+    )
 
 
 def query_assets(
@@ -152,7 +148,7 @@ def show_asset(
     resource_group_name: str,
 ) -> dict:
     asset_provider = AssetProvider(cmd)
-    return asset_provider.show(asset_name=asset_name, resource_group_name=resource_group_name)
+    return asset_provider.show(resource_name=asset_name, resource_group_name=resource_group_name)
 
 
 def update_asset(
