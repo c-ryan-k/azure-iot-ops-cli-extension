@@ -82,6 +82,9 @@ jobs:
 
           # start server in background
           sudo k3s server --cluster-init &
+      - name: "Copy config"
+        run: |
+          cp /etc/rancher/k3s/k3s.yaml ~/.kube/config
       - name: "Az CLI login"
         uses: azure/login@v1
         with:
