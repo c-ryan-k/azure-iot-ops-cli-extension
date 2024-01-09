@@ -81,7 +81,7 @@ jobs:
           K3S_KUBECONFIG_MODE="644"
 
           # start server in background
-          k3s server --cluster-init &
+          sudo k3s server --cluster-init &
       - name: "Az CLI login"
         uses: azure/login@v1
         with:
