@@ -42,7 +42,7 @@ env:
   CLUSTER_RG: ${{ inputs.resource_group }}
   CUSTOM_LOCATIONS_OID: "51dfe1e8-70c6-4de5-a08e-e18aff23d815"
   EXTENSION_SOURCE_DIRECTORY: "./azure-iot-ops-cli-extension"
-  K3D_VERSION: "v5.5.1"
+  K3S_VERSION: "v1.28.5+k3s1"
 
 jobs:
   integration_test:
@@ -70,18 +70,17 @@ jobs:
         run: |
           # vars
           release_url="https://github.com/k3s-io/k3s/releases/download"
-          version="v1.28.5+k3s1"
           install_dir="/usr/local/bin/k3s"
 
           # install
           sudo apt install nfs-common
-          curl -Lo $install_dir "$release_url/$version/k3s"
+          curl -Lo $install_dir "$release_url/${{ env.K3S_VERSION }}/k3s"
           chmod a+x $install_dir
 
           # config
           K3S_KUBECONFIG_MODE="644"
 
-          # start server in background
+          # start cluster in background
           sudo k3s server --cluster-init &
       - name: "Copy config"
         run: |

@@ -32,7 +32,7 @@ on:
         default: ops-cli-int-test-rg
   # Run every night at midnight to cleanup resources
   schedule:
-    - cron: '0 0 * * *'
+    - cron: '0 8 * * *'
 
 env:
   RESOURCE_GROUP: ${{ inputs.resource_group || 'ops-cli-int-test-rg' }}
