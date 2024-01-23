@@ -21,6 +21,7 @@ class ResourceOutputDetailLevel(ListableEnum):
     summary = "0"  # summary
     detail = "1"  # detail
     verbose = "2"  # verbose
+    
 
 
 class DataProcessorStageType(ListableEnum):

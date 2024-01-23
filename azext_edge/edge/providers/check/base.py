@@ -843,3 +843,7 @@ def process_list_resource(
 def generate_target_resource_name(api_info: EdgeResourceApi, resource_kind: str) -> str:
     resource_plural = api_info._kinds[resource_kind] if api_info._kinds else f"{resource_kind}s"
     return f"{resource_plural}.{api_info.group}"
+
+
+def left_pad(padding: Tuple[int, int, int, int], amount: int) -> Tuple[int, int, int, int]:
+    return (padding[0], padding[1], padding[2], padding[3] + amount)

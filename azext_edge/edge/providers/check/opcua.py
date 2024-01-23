@@ -13,6 +13,7 @@ from .base import (
     CheckManager,
     check_post_deployment,
     generate_target_resource_name,
+    left_pad,
     pods_grouped_by_namespace,
     process_pods_status,
     resources_grouped_by_namespace,
@@ -204,6 +205,24 @@ def evaluate_asset_types(
                 )
 
     return check_manager.as_dict(as_list)
+
+
+def evaluate_summary(
+    as_list: bool = False,
+) -> Dict[str, Any]:
+    target = "summary/OPCUA"
+    desc = "Evaluate OPCUA service summary"
+    check_manager = CheckManager(
+        check_name="evalOPCUASummary",
+        check_desc=desc,
+    )
+    check_manager.add_target(target_name=target)
+    check_manager.add_target_eval(target_name=target, status=CheckTaskStatus.success)
+
+    padding = (0, 0, 0, PADDING_SIZE)
+    padding = left_pad(padding, PADDING_SIZE)
+    check_manager.add_display(target_name=target, display=Padding("OPCUA Summary", padding))
+    return check_manager.as_dict(as_list=as_list)
 
 
 def _process_schema(

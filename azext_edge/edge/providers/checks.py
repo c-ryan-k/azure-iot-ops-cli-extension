@@ -4,7 +4,7 @@
 # Licensed under the MIT License. See License file in the project root for license information.
 # ----------------------------------------------------------------------------------------------
 
-from typing import Any, Dict, List
+from typing import Any, Dict, List, Optional
 
 from azure.cli.core.azclierror import ArgumentUsageError
 from rich.console import Console
@@ -16,6 +16,7 @@ from .check.dataprocessor import check_dataprocessor_deployment
 from .check.lnm import check_lnm_deployment
 from .check.mq import check_mq_deployment
 from .check.opcua import check_opcua_deployment
+from .check.summary import check_service_summary
 from .edge_api.dataprocessor import DataProcessorResourceKinds
 from .edge_api.lnm import LnmResourceKinds
 from .edge_api.mq import MqResourceKinds
@@ -28,7 +29,7 @@ console = Console(width=100, highlight=False)
 
 def run_checks(
     detail_level: int = ResourceOutputDetailLevel.summary.value,
-    ops_service: str = OpsServiceType.mq.value,
+    ops_service: Optional[str] = None,
     pre_deployment: bool = True,
     post_deployment: bool = True,
     as_list: bool = False,
@@ -45,25 +46,28 @@ def run_checks(
 
         sleep(0.5)
 
-        result["title"] = f"Evaluation for {{[bright_blue]{ops_service}[/bright_blue]}} service deployment"
+        result["title"] = f"Evaluation for {{[bright_blue]{ops_service}[/bright_blue]}} service deployment" if ops_service else "Summary of all AIO Services"
 
         if pre_deployment:
             check_pre_deployment(result, as_list)
         if post_deployment:
             result["postDeployment"] = []
-            service_check_dict = {
-                OpsServiceType.akri.value: check_akri_deployment,
-                OpsServiceType.mq.value: check_mq_deployment,
-                OpsServiceType.dataprocessor.value: check_dataprocessor_deployment,
-                OpsServiceType.lnm.value: check_lnm_deployment,
-                OpsServiceType.opcua.value: check_opcua_deployment,
-            }
-            service_check_dict[ops_service](
-                detail_level=detail_level,
-                result=result,
-                as_list=as_list,
-                resource_kinds=resource_kinds
-            )
+            if ops_service:
+                service_check_dict = {
+                    OpsServiceType.akri.value: check_akri_deployment,
+                    OpsServiceType.mq.value: check_mq_deployment,
+                    OpsServiceType.dataprocessor.value: check_dataprocessor_deployment,
+                    OpsServiceType.lnm.value: check_lnm_deployment,
+                    OpsServiceType.opcua.value: check_opcua_deployment,
+                }
+                service_check_dict[ops_service](
+                    detail_level=detail_level,
+                    result=result,
+                    as_list=as_list,
+                    resource_kinds=resource_kinds
+                )
+            else:
+                result["postDeployment"] = check_service_summary(as_list=as_list)
 
         if as_list:
             return process_as_list(console=console, result=result) if as_list else result
