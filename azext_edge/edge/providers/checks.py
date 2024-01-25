@@ -16,7 +16,7 @@ from .check.dataprocessor import check_dataprocessor_deployment
 from .check.lnm import check_lnm_deployment
 from .check.mq import check_mq_deployment
 from .check.opcua import check_opcua_deployment
-from .check.summary import check_service_summary
+from .check.summary import run_summary_checks
 from .edge_api.dataprocessor import DataProcessorResourceKinds
 from .edge_api.lnm import LnmResourceKinds
 from .edge_api.mq import MqResourceKinds
@@ -67,7 +67,7 @@ def run_checks(
                     resource_kinds=resource_kinds
                 )
             else:
-                result["postDeployment"] = check_service_summary(as_list=as_list)
+                result["postDeployment"] = run_summary_checks(as_list=as_list)
 
         if as_list:
             return process_as_list(console=console, result=result) if as_list else result

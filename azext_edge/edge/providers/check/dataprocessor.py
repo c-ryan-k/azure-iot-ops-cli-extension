@@ -577,7 +577,7 @@ def evaluate_summary(
         check_desc=desc,
     )
     check_manager.add_target(target_name=target)
-    check_manager.add_target_eval(target_name=target, status=CheckTaskStatus.success)
+    # check_manager.add_target_eval(target_name=target, status=CheckTaskStatus.success)
 
     padding = (0, 0, 0, PADDING_SIZE)
     padding = left_pad(padding, PADDING_SIZE)

@@ -69,3 +69,11 @@ def generate_self_signed_cert(valid_days: int = 30) -> Tuple[bytes, bytes]:
     )
 
     return (cert.public_bytes(serialization.Encoding.PEM), key_bytes)
+
+
+def get_certificate_expiry(certificate: str) -> datetime:
+    try:
+        cert_obj = x509.load_pem_x509_certificate(certificate)
+        return cert_obj.not_valid_after
+    except Exception as e:
+        raise ValueError(e)
