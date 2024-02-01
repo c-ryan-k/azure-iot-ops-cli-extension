@@ -1,0 +1,65 @@
+# TODO - currently private index is not used.
+# TODO - Trigger PRs against public index using github release artifact URL
+name: "[auto] Update CLI Extension index"
+
+on:
+    release:
+      types: [
+        published
+      ]
+env:
+  extensions_folder: azure-cli-extensions
+  extensions_fork_url: https://github.com/c-ryan-k/azure-cli-extensions
+jobs:
+  update_index:
+    # prompt for explicit approval as this will update the index for customers
+    environment: production
+    runs-on:
+      [
+        self-hosted,
+        1ES.Pool=iotupx-github-hosted-pool,
+        1ES.ImageOverride=MMSUbuntu20.04,
+      ]
+    steps:
+      - name: Get release artifact
+        id: wheel
+        run: |
+            wheel=${{ github.event.release.assets && github.event.release.assets[0].browser_download_url || '' }}
+            if [ -z $wheel ]; then
+                echo "No wheel found in this release" >> $GITHUB_STEP_SUMMARY
+                exit 1
+            else
+                echo "wheel=$wheel" >> $GITHUB_OUTPUT
+            fi
+      - name: download extensions repo
+        if: ${{ steps.wheel.outputs.wheel }}
+        run: |
+            git init ${{env.extensions_folder}}
+            cd ${{env.extensions_folder}}
+            git remote add -f origin https://github.com/azure/azure-cli-extensions
+            git config core.sparseCheckout true
+            echo "src/index.json" >> .git/info/sparse-checkout
+            echo "linter_exclusions.yml" >> .git/info/sparse-checkout
+            git pull origin main
+      # Setup and configure azdev to update index file
+      - name: Setup azdev update index
+        if: ${{ steps.wheel.outputs.wheel }}
+        run: |
+          set -ev
+          pip install virtualenv
+          python -m virtualenv venv/
+          source ./venv/bin/activate
+          pip install azdev
+          azdev --version
+          git init
+          azdev extension repo add ${{env.extensions_folder}}
+          azdev extension update-index ${{ steps.wheel.outputs.wheel }}
+      # do the thing with the PR
+      - name: commit and create PR
+        if: ${{ steps.wheel.outputs.wheel }}
+        run: |
+          cd ${{ env.extensions_folder }}
+          git remote add fork ${{env.extensions_fork_url}}
+          # TODO
+        env:
+          SAS_TOKEN: ${{ secrets.SAS_TOKEN }}
