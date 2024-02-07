@@ -1,4 +1,4 @@
-name: "[auto] Check PR title format"
+name: "Check PR title format"
 on:
   pull_request:
     types: [
