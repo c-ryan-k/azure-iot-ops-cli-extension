@@ -12,7 +12,7 @@ from azext_edge.edge.providers.check.common import PADDING_SIZE
 
 from ..base import DEFAULT_NAMESPACE, get_namespaced_secret
 from .akri import evaluate_summary as eval_akri_summary
-from .base import CheckManager
+from .base import CheckManager, process_nodes
 from .dataprocessor import evaluate_summary as eval_dataprocessor_summary
 from .lnm import evaluate_summary as eval_lnm_summary
 from .mq import evaluate_summary as eval_mq_summary
@@ -51,7 +51,16 @@ def eval_aio_summary(
 def eval_nodes(
     check_manager: CheckManager, padding: Tuple[int, int, int, int] = (0, 0, 0, 8)
 ) -> None:
-    pass
+    target = "summary/nodes"
+    namespace = DEFAULT_NAMESPACE
+    check_manager.add_target(target_name=target, namespace=namespace)
+    check_manager.add_display(
+        target_name=target,
+        namespace=namespace,
+        display=Padding("Nodes", padding),
+    )
+    padding = left_pad(padding, 4)
+    process_nodes(check_manager=check_manager, namespace=namespace, target=target, padding=padding)
 
 
 def eval_secrets(

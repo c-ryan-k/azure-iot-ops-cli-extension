@@ -282,8 +282,6 @@ def check_k8s_version(as_list: bool = False) -> Dict[str, Any]:
 
 
 def check_nodes(as_list: bool = False) -> Dict[str, Any]:
-    from kubernetes.client.models import V1Node, V1NodeList
-
     check_manager = CheckManager(check_name="evalClusterNodes", check_desc="Evaluate cluster nodes")
     target_minimum_nodes = "cluster/nodes"
     check_manager.add_target(
@@ -294,66 +292,7 @@ def check_nodes(as_list: bool = False) -> Dict[str, Any]:
         ],
     )
 
-    try:
-        core_client = client.CoreV1Api()
-        nodes: V1NodeList = core_client.list_node()
-    except ApiException as ae:
-        logger.debug(str(ae))
-        api_error_text = "Unable to fetch nodes. Is there connectivity to the cluster?"
-        check_manager.add_target_eval(
-            target_name=target_minimum_nodes,
-            status=CheckTaskStatus.error.value,
-            value=api_error_text,
-        )
-        check_manager.add_display(
-            target_name=target_minimum_nodes,
-            display=Padding(api_error_text, (0, 0, 0, 8)),
-        )
-    else:
-        node_items: List[V1Node] = nodes.items
-        node_count = len(node_items)
-        target_display = "At least 1 node is required. {}"
-        if node_count < 1:
-            target_display = Padding(
-                target_display.format(f"[red]Detected {node_count}[/red]."),
-                (0, 0, 0, 8),
-            )
-            check_manager.add_target_eval(target_name=target_minimum_nodes, status=CheckTaskStatus.error.value)
-            check_manager.add_display(target_name=target_minimum_nodes, display=target_display)
-            return check_manager.as_dict()
-
-        target_display = Padding(
-            target_display.format(f"[green]Detected {node_count}[/green]."),
-            (0, 0, 0, 8),
-        )
-        check_manager.add_display(target_name=target_minimum_nodes, display=target_display)
-        check_manager.add_display(target_name=target_minimum_nodes, display=NewLine())
-
-        for node in node_items:
-            node_memory_value = {}
-            memory_status = CheckTaskStatus.success.value
-            memory: str = node.status.allocatable["memory"]
-            memory = memory.replace("Ki", "")
-            memory: int = int(int(memory) / 1024)
-            mem_colored = f"[green]{memory}[/green]"
-            node_name = node.metadata.name
-            node_memory_value[node_name] = f"{memory}MiB"
-
-            if memory < 140:
-                memory_status = CheckTaskStatus.warning.value
-                mem_colored = f"[yellow]{memory}[/yellow]"
-
-            node_memory_display = Padding(
-                f"[bright_blue]{node_name}[/bright_blue] {mem_colored} MiB",
-                (0, 0, 0, 8),
-            )
-            check_manager.add_target_eval(
-                target_name=target_minimum_nodes,
-                status=memory_status,
-                value=node_memory_value,
-            )
-            check_manager.add_display(target_name=target_minimum_nodes, display=node_memory_display)
-
+    process_nodes(check_manager=check_manager, target=target_minimum_nodes)
     return check_manager.as_dict(as_list)
 
 
@@ -518,6 +457,74 @@ class CheckManager:
                     result["targets"][type][namespace]["displays"] = deepcopy(self.target_displays[type][namespace])
 
         return result
+
+
+
+def process_nodes(check_manager: CheckManager, target: str, namespace: Optional[str] = None, padding: Tuple[int, int, int, int] = (0, 0, 0, 8)):
+    from kubernetes.client.models import V1Node, V1NodeList
+    
+    try:
+        core_client = client.CoreV1Api()
+        nodes: V1NodeList = core_client.list_node()
+    except ApiException as ae:
+        logger.debug(str(ae))
+        api_error_text = "Unable to fetch nodes. Is there connectivity to the cluster?"
+        check_manager.add_target_eval(
+            target_name=target,
+            namespace=namespace,
+            status=CheckTaskStatus.error.value,
+            value=api_error_text,
+        )
+        check_manager.add_display(
+            target_name=target,
+            namespace=namespace,
+            display=Padding(api_error_text, padding),
+        )
+    else:
+        node_items: List[V1Node] = nodes.items
+        node_count = len(node_items)
+        target_display = "At least 1 node is required. {}"
+        if node_count < 1:
+            target_display = Padding(
+                target_display.format(f"[red]Detected {node_count}[/red]."),
+                padding,
+            )
+            check_manager.add_target_eval(target_name=target, namespace=namespace, status=CheckTaskStatus.error.value)
+            check_manager.add_display(target_name=target, namespace=namespace, display=target_display)
+            return check_manager.as_dict()
+
+        target_display = Padding(
+            target_display.format(f"[green]Detected {node_count}[/green]."),
+            padding,
+        )
+        check_manager.add_display(target_name=target, namespace=namespace, display=target_display)
+        check_manager.add_display(target_name=target, namespace=namespace, display=NewLine())
+
+        for node in node_items:
+            node_memory_value = {}
+            memory_status = CheckTaskStatus.success.value
+            memory: str = node.status.allocatable["memory"]
+            memory = memory.replace("Ki", "")
+            memory: int = int(int(memory) / 1024)
+            mem_colored = f"[green]{memory}[/green]"
+            node_name = node.metadata.name
+            node_memory_value[node_name] = f"{memory}MiB"
+
+            if memory < 140:
+                memory_status = CheckTaskStatus.warning.value
+                mem_colored = f"[yellow]{memory}[/yellow]"
+
+            node_memory_display = Padding(
+                f"[bright_blue]{node_name}[/bright_blue] {mem_colored} MiB",
+                padding,
+            )
+            check_manager.add_target_eval(
+                target_name=target,
+                namespace=namespace,
+                status=memory_status,
+                value=node_memory_value,
+            )
+            check_manager.add_display(target_name=target, namespace=namespace, display=node_memory_display)
 
 
 def evaluate_pod_health(
