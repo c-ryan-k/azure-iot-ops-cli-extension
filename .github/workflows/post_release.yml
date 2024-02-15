@@ -17,6 +17,8 @@ jobs:
         with:
           fetch-depth: 1
       - name: "PR"
+        env:
+            GH_TOKEN: ${{ github.token }}
         run: |
           PR_URL=$(gh pr create --base main --head ${{ env.branch }} --title "Release ${{ env.tag }}" --body "${{ env.body }}" --reviewer ${{ github.event.sender.login }})
           echo "Created PR: $PR_URL" >> $GITHUB_STEP_SUMMARY
