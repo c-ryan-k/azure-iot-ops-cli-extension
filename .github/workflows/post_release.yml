@@ -1,0 +1,22 @@
+name: "[auto] PR to main on Release"
+on:
+  release:
+    types: [published]
+permissions:
+  contents: write
+
+jobs:
+  create-release-PR:
+    env:
+      tag: ${{ github.event.release.tag_name }}
+      body: ${{ github.event.release.body }}
+      branch: ${{ github.event.release.target_commitish }}
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 1
+      - name: "PR"
+        run: |
+          PR_URL=$(gh pr create --base main --head ${{ env.branch }} --title "Release ${{ env.tag }}" --body "${{ env.body }}" --reviewer ${{ github.event.sender.login }})
+          echo "Created PR: $PR_URL" >> $GITHUB_STEP_SUMMARY
