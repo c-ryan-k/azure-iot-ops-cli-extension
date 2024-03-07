@@ -9,7 +9,7 @@ from typing import Any, Dict, List
 from azure.cli.core.azclierror import ArgumentUsageError
 from rich.console import Console
 
-from ..common import ListableEnum, OpsServiceType
+from ..common import CheckTaskStatus, ListableEnum, OpsServiceType
 from .check.base import check_pre_deployment, process_as_list
 from .check.common import ResourceOutputDetailLevel
 from .check.dataprocessor import check_dataprocessor_deployment
@@ -73,6 +73,32 @@ def run_checks(
         if as_list:
             return process_as_list(console=console, result=result) if as_list else result
         return result
+
+
+def check_node_readiness():
+    from kubernetes import client
+    from kubernetes.client.models import V1NodeList, V1Node
+
+    core_client = client.CoreV1Api()
+    nodes: V1NodeList = core_client.list_node()
+
+    if not nodes or not nodes.items:
+        raise Exception("this cluster has no nodes")
+
+    is_multinode = len(nodes.items) > 1
+    # to verify:
+    node_count_status = CheckTaskStatus.warning.value if is_multinode else CheckTaskStatus.success.value
+    # single node green / multi-node yellow?
+    # for each node, verify:
+    node: V1Node
+    for node in nodes.items:
+        #    x64
+        #    16GB memory (single node, multi-node may be higher)
+        #    4 vCPU (single node, multi-node may be higher)
+        #    30GB storage
+        pass
+
+    pass
 
 
 def _validate_resource_kinds_under_service(ops_service: str, resource_kinds: List[str]) -> None:
