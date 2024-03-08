@@ -77,8 +77,8 @@ def run_checks(
 
 def check_node_readiness():
     from kubernetes import client
-    from kubernetes.client.models import V1NodeList, V1Node
-
+    from kubernetes.client.models import V1NodeList, V1Node, V1NodeStatus, V1NodeSystemInfo, V1ObjectMeta
+    from kubernetes.utils import parse_quantity
     core_client = client.CoreV1Api()
     nodes: V1NodeList = core_client.list_node()
 
@@ -92,11 +92,26 @@ def check_node_readiness():
     # for each node, verify:
     node: V1Node
     for node in nodes.items:
-        #    x64
-        #    16GB memory (single node, multi-node may be higher)
-        #    4 vCPU (single node, multi-node may be higher)
-        #    30GB storage
-        pass
+        metadata = node.metadata
+        status = node.status
+        info = status.node_info
+        arch = info.architecture  # kernelversion, osimage, kubeletversion, OS
+        capacity: dict = status.capacity
+
+        # 16GB memory (single node, multi-node may be higher)
+        memory_capacity = int(parse_quantity(capacity.get("memory")) / 1024 / 1024 / 1024)  # "memory": "16365028Ki"
+
+        # 4 vCPU (single node, multi-node may be higher)
+        cpu_capacity = parse_quantity(capacity.get("cpu"))  # "cpu": "4"
+
+        # 30GB storage
+        storage_capacity = int(parse_quantity(capacity.get("ephemeral-storage")) / 1024 / 1024 / 1024)  # "ephemeral-storage": "32847680Ki"
+
+        print(f"Node - {metadata.name}")
+        print(f"Architecture - {arch}")
+        print(f"CPU - {cpu_capacity}")
+        print(f"Memory - {memory_capacity}")
+        print(f"Storage - {storage_capacity}")
 
     pass
 
