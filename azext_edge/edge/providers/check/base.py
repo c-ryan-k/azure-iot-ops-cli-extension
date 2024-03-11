@@ -4,29 +4,38 @@
 # Licensed under the MIT License. See License file in the project root for license information.
 # ----------------------------------------------------------------------------------------------
 
+from enum import Enum
 from functools import partial
 from itertools import groupby
 from typing import Any, Callable, Dict, List, Optional, Tuple, Union
-from enum import Enum
 
 from knack.log import get_logger
 from kubernetes.client.exceptions import ApiException
 from kubernetes.client.models import (
     V1APIResource,
     V1APIResourceList,
+    V1Node,
+    V1NodeList,
+    V1NodeStatus,
+    V1NodeSystemInfo,
+    V1ObjectMeta,
 )
 from rich.console import Console, NewLine
 from rich.padding import Padding
 
-from .common import ALL_NAMESPACES_TARGET, PADDING_SIZE, CoreServiceResourceKinds, ResourceOutputDetailLevel
 from ...common import CheckTaskStatus, ListableEnum
-
 from ...providers.edge_api import EdgeResourceApi
-
-from ..base import (
-    client,
-    get_cluster_custom_api,
-    get_namespaced_pods_by_prefix,
+from ..base import client, get_cluster_custom_api, get_namespaced_pods_by_prefix
+from .common import (
+    AIO_SUPPORTED_ARCHITECTURES,
+    ALL_NAMESPACES_TARGET,
+    DISPLAY_BYTES_PER_GIGABYTE,
+    MIN_NODE_MEMORY,
+    MIN_NODE_STORAGE,
+    MIN_NODE_VCPU,
+    PADDING_SIZE,
+    CoreServiceResourceKinds,
+    ResourceOutputDetailLevel,
 )
 
 logger = get_logger(__name__)
@@ -41,7 +50,7 @@ def check_pre_deployment(
     desired_checks.update(
         {
             "checkK8sVersion": partial(check_k8s_version, as_list=as_list),
-            "checkNodes": partial(check_nodes, as_list=as_list),
+            "checkNodes": partial(check_node_readiness, as_list=as_list),
         }
     )
 
@@ -63,7 +72,9 @@ def check_post_deployment(
     resource_name: str = None,
     excluded_resources: Optional[List[str]] = None,
 ) -> None:
-    resource_enumeration, api_resources = enumerate_ops_service_resources(api_info, check_name, check_desc, as_list, excluded_resources)
+    resource_enumeration, api_resources = enumerate_ops_service_resources(
+        api_info, check_name, check_desc, as_list, excluded_resources
+    )
     result["postDeployment"].append(resource_enumeration)
     lowercase_api_resources = {k.lower(): v for k, v in api_resources.items()}
 
@@ -74,11 +85,13 @@ def check_post_deployment(
             # only add core service evaluation if there is no resource filter
             if resource == CoreServiceResourceKinds.RUNTIME_RESOURCE and not resource_kinds:
                 append_resource = True
-            elif (resource and resource.value in lowercase_api_resources and should_check_resource):
+            elif resource and resource.value in lowercase_api_resources and should_check_resource:
                 append_resource = True
 
             if append_resource:
-                result["postDeployment"].append(evaluate_func(detail_level=detail_level, as_list=as_list, resource_name=resource_name))
+                result["postDeployment"].append(
+                    evaluate_func(detail_level=detail_level, as_list=as_list, resource_name=resource_name)
+                )
 
 
 def filter_resources_by_name(
@@ -156,7 +169,7 @@ def process_as_list(console: Console, result: Dict[str, Any]) -> None:
                     namespace_target = targets[type][namespace]
                     displays = namespace_target.get("displays", [])
                     status = namespace_target.get("status")
-                    for (idx, disp) in enumerate(displays):
+                    for idx, disp in enumerate(displays):
                         # display status indicator on each 'namespaced' grouping of displays
                         if all([idx == 0, namespace != ALL_NAMESPACES_TARGET, status]):
                             prefix_emoji = get_emoji_from_status(status)
@@ -220,9 +233,7 @@ def enumerate_ops_service_resources(
     check_manager = CheckManager(check_name=check_name, check_desc=check_desc)
     check_manager.add_target(target_name=target_api)
 
-    api_resources: V1APIResourceList = get_cluster_custom_api(
-        group=api_info.group, version=api_info.version
-    )
+    api_resources: V1APIResourceList = get_cluster_custom_api(group=api_info.group, version=api_info.version)
 
     if not api_resources:
         check_manager.add_target_eval(target_name=target_api, status=CheckTaskStatus.skipped.value)
@@ -304,82 +315,6 @@ def check_k8s_version(as_list: bool = False) -> Dict[str, Any]:
             target_name=target_k8s_version,
             display=Padding(k8s_semver_text, (0, 0, 0, 8)),
         )
-
-    return check_manager.as_dict(as_list)
-
-
-def check_nodes(as_list: bool = False) -> Dict[str, Any]:
-    from kubernetes.client.models import V1Node, V1NodeList
-
-    check_manager = CheckManager(check_name="evalClusterNodes", check_desc="Evaluate cluster nodes")
-    target_minimum_nodes = "cluster/nodes"
-    check_manager.add_target(
-        target_name=target_minimum_nodes,
-        conditions=[
-            "len(cluster/nodes)>=1",
-            "(cluster/nodes).each(node.status.allocatable[memory]>=140MiB)",
-        ],
-    )
-
-    try:
-        core_client = client.CoreV1Api()
-        nodes: V1NodeList = core_client.list_node()
-    except ApiException as ae:
-        logger.debug(str(ae))
-        api_error_text = "Unable to fetch nodes. Is there connectivity to the cluster?"
-        check_manager.add_target_eval(
-            target_name=target_minimum_nodes,
-            status=CheckTaskStatus.error.value,
-            value=api_error_text,
-        )
-        check_manager.add_display(
-            target_name=target_minimum_nodes,
-            display=Padding(api_error_text, (0, 0, 0, 8)),
-        )
-    else:
-        node_items: List[V1Node] = nodes.items
-        node_count = len(node_items)
-        target_display = "At least 1 node is required. {}"
-        if node_count < 1:
-            target_display = Padding(
-                target_display.format(f"[red]Detected {node_count}[/red]."),
-                (0, 0, 0, 8),
-            )
-            check_manager.add_target_eval(target_name=target_minimum_nodes, status=CheckTaskStatus.error.value)
-            check_manager.add_display(target_name=target_minimum_nodes, display=target_display)
-            return check_manager.as_dict()
-
-        target_display = Padding(
-            target_display.format(f"[green]Detected {node_count}[/green]."),
-            (0, 0, 0, 8),
-        )
-        check_manager.add_display(target_name=target_minimum_nodes, display=target_display)
-        check_manager.add_display(target_name=target_minimum_nodes, display=NewLine())
-
-        for node in node_items:
-            node_memory_value = {}
-            memory_status = CheckTaskStatus.success.value
-            memory: str = node.status.allocatable["memory"]
-            memory = memory.replace("Ki", "")
-            memory: int = int(int(memory) / 1024)
-            mem_colored = f"[green]{memory}[/green]"
-            node_name = node.metadata.name
-            node_memory_value[node_name] = f"{memory}MiB"
-
-            if memory < 140:
-                memory_status = CheckTaskStatus.warning.value
-                mem_colored = f"[yellow]{memory}[/yellow]"
-
-            node_memory_display = Padding(
-                f"[bright_blue]{node_name}[/bright_blue] {mem_colored} MiB",
-                (0, 0, 0, 8),
-            )
-            check_manager.add_target_eval(
-                target_name=target_minimum_nodes,
-                status=memory_status,
-                value=node_memory_value,
-            )
-            check_manager.add_display(target_name=target_minimum_nodes, display=node_memory_display)
 
     return check_manager.as_dict(as_list)
 
@@ -466,7 +401,13 @@ class CheckManager:
         self.target_displays = {}
         self.worst_status = CheckTaskStatus.success.value
 
-    def add_target(self, target_name: str, namespace: str = ALL_NAMESPACES_TARGET, conditions: List[str] = None, description: str = None) -> None:
+    def add_target(
+        self,
+        target_name: str,
+        namespace: str = ALL_NAMESPACES_TARGET,
+        conditions: List[str] = None,
+        description: str = None,
+    ) -> None:
         if target_name not in self.targets:
             # Create a default `None` namespace target for targets with no namespace
             self.targets[target_name] = {}
@@ -478,10 +419,16 @@ class CheckManager:
         if description:
             self.targets[target_name][namespace]["description"] = description
 
-    def set_target_conditions(self, target_name: str, conditions: List[str], namespace: str = ALL_NAMESPACES_TARGET) -> None:
+    def set_target_conditions(
+        self, target_name: str, conditions: List[str], namespace: str = ALL_NAMESPACES_TARGET
+    ) -> None:
         self.targets[target_name][namespace]["conditions"] = conditions
 
-    def add_target_conditions(self, target_name: str, conditions: List[str], namespace: str = ALL_NAMESPACES_TARGET) -> None:
+    def add_target_conditions(
+        self, target_name: str, conditions: List[str], namespace: str = ALL_NAMESPACES_TARGET
+    ) -> None:
+        if not self.targets[target_name][namespace]["conditions"]:
+            self.targets[target_name][namespace]["conditions"] = []
         self.targets[target_name][namespace]["conditions"].extend(conditions)
 
     def set_target_status(self, target_name: str, status: str, namespace: str = ALL_NAMESPACES_TARGET) -> None:
@@ -547,16 +494,144 @@ class CheckManager:
         return result
 
 
+def check_node_readiness(as_list: bool = False) -> Dict[str, Any]:
+    from kubernetes import client
+    from kubernetes.utils import parse_quantity
+    from rich.table import Table
+
+    check_manager = CheckManager(check_name="evalClusterNodes", check_desc="Evaluate cluster nodes")
+    padding = (0, 0, 0, 8)
+
+    # target for all nodes
+    target = "cluster/nodes"
+    check_manager.add_target(target_name=target, conditions=["len(cluster/nodes)>=1"])
+
+    core_client = client.CoreV1Api()
+    nodes: V1NodeList = core_client.list_node()
+
+    if not nodes or not nodes.items:
+        check_manager.add_target_eval(
+            target_name=target, status=CheckTaskStatus.error.value, value="No nodes detected."
+        )
+        check_manager.add_display(target_name=target, display=Padding("No nodes detected.", padding))
+        return check_manager.as_dict(as_list)
+
+    is_multinode = len(nodes.items) > 1
+    node_count_status = CheckTaskStatus.warning.value if is_multinode else CheckTaskStatus.success.value
+
+    check_manager.add_target_eval(target_name=target, status=node_count_status, value=len(nodes.items))
+    if is_multinode:
+        check_manager.add_display(
+            target_name=target,
+            display=Padding(
+                "[yellow]Currently, only single-node clusters are officially supported for AIO deployments", padding
+            ),
+        )
+
+    # prep table
+    table = Table(
+        show_header=True, header_style="bold", show_lines=True, caption="Node resources", caption_justify="left"
+    )
+    for column_name, justify in [
+        ("Name", "left"),
+        ("Architecture", "right"),
+        ("CPU (vCPU)", "right"),
+        ("Memory (GB)", "right"),
+        ("Storage (GB)", "right"),
+    ]:
+        table.add_column(column_name, justify=f"{justify}")
+
+    node: V1Node
+    for node in nodes.items:
+        # get node properties
+        metadata: V1ObjectMeta = node.metadata
+        node_name = metadata.name
+        status: V1NodeStatus = node.status
+        info: V1NodeSystemInfo = status.node_info
+        capacity: dict = status.capacity
+
+        # check_manager target for node
+        node_target = f"cluster/nodes/{node_name}"
+        check_manager.add_target(target_name=node_target)
+
+        # parse decimal values
+        memory_capacity = parse_quantity(capacity.get("memory"))
+        cpu_capacity = parse_quantity(capacity.get("cpu"))
+        storage_capacity = parse_quantity(capacity.get("ephemeral-storage"))
+
+        # verify architecture
+        # TODO - verify / constant
+        arch_condition = "info.architecture"
+        check_manager.add_target_conditions(
+            target_name=node_target, conditions=[f"{arch_condition} in ({','.join(AIO_SUPPORTED_ARCHITECTURES)})"]
+        )
+        arch = info.architecture
+
+        # arch eval
+        arch_status = (
+            CheckTaskStatus.success.value if arch in AIO_SUPPORTED_ARCHITECTURES else CheckTaskStatus.error.value
+        )
+        check_manager.add_target_eval(target_name=node_target, status=arch_status, value={arch_condition: arch})
+
+        # arch display
+        arch_status_color = "green" if arch_status == CheckTaskStatus.success.value else "red"
+        arch_display = f"[{arch_status_color}]{arch}[/{arch_status_color}]"
+
+        # TODO - constants for expected values
+        # build node table row
+        row_status = CheckTaskStatus.success.value
+        row_cells = []
+        for condition, expected, actual, actual_display in [
+            (
+                "condition.cpu",
+                MIN_NODE_VCPU,
+                cpu_capacity,
+                f"{cpu_capacity}"
+            ),
+            (
+                "condition.memory",
+                MIN_NODE_MEMORY,
+                memory_capacity,
+                "%.2f" % (memory_capacity / DISPLAY_BYTES_PER_GIGABYTE),
+            ),
+            (
+                "condition.ephemeral-storage",
+                MIN_NODE_STORAGE,
+                storage_capacity,
+                "%.2f" % (storage_capacity / DISPLAY_BYTES_PER_GIGABYTE),
+            ),
+        ]:
+            # add expected target (str)
+            check_manager.add_target_conditions(target_name=node_target, conditions=[f"{condition}>={expected}"])
+
+            # convert expected to decimal and check
+            expected = parse_quantity(expected)
+            cell_status = CheckTaskStatus.success.value
+            if actual < expected:
+                row_status = CheckTaskStatus.error.value
+                cell_status = CheckTaskStatus.error.value
+
+            cell_status_color = "green" if cell_status == CheckTaskStatus.success.value else "red"
+            check_manager.add_target_eval(target_name=node_target, status=row_status, value={condition: actual})
+
+            row_cells.append(f"[{cell_status_color}]{actual_display}[/{cell_status_color}]")
+
+        # overall node name color
+        node_status_color = "green" if row_status == CheckTaskStatus.success.value else "red"
+        node_name_display = f"[{node_status_color}]{node_name}[/{node_status_color}]"
+        table.add_row(node_name_display, arch_display, *row_cells)
+
+    check_manager.add_display(target_name=target, display=Padding(table, padding))
+    return check_manager.as_dict(as_list)
+
+
 def evaluate_pod_health(
-    check_manager: CheckManager,
-    namespace: str,
-    target: str,
-    pod: str,
-    display_padding: int,
-    service_label: str
+    check_manager: CheckManager, namespace: str, target: str, pod: str, display_padding: int, service_label: str
 ) -> None:
     target_service_pod = f"pod/{pod}"
-    check_manager.add_target_conditions(target_name=target, namespace=namespace, conditions=[f"{target_service_pod}.status.phase"])
+    check_manager.add_target_conditions(
+        target_name=target, namespace=namespace, conditions=[f"{target_service_pod}.status.phase"]
+    )
     pods = get_namespaced_pods_by_prefix(prefix=pod, namespace=namespace, label_selector=service_label)
     process_pods_status(
         check_manager=check_manager,
@@ -585,7 +660,7 @@ def process_pods_status(
             eval_value=None,
             resource_name=target_service_pod,
             namespace=namespace,
-            padding=(0, 0, 0, display_padding)
+            padding=(0, 0, 0, display_padding),
         )
 
     else:
@@ -620,13 +695,13 @@ def process_properties(
     prop_value: Dict[str, Any],
     properties: Dict[str, Any],
     namespace: str,
-    padding: tuple
+    padding: tuple,
 ) -> None:
     if not prop_value:
         return
 
     for prop, display_name, verbose_only in properties:
-        keys = prop.split('.')
+        keys = prop.split(".")
         value = prop_value
         for key in keys:
             value = value.get(key)
@@ -642,17 +717,12 @@ def process_properties(
             properties=value,
             display_name=display_name,
             namespace=namespace,
-            padding=padding
+            padding=padding,
         )
 
 
 def process_property_by_type(
-    check_manager: CheckManager,
-    target_name: str,
-    properties: Any,
-    display_name: str,
-    namespace: str,
-    padding: tuple
+    check_manager: CheckManager, target_name: str, properties: Any, display_name: str, namespace: str, padding: tuple
 ) -> None:
     padding_left = padding[3]
     if isinstance(properties, list):
@@ -660,25 +730,19 @@ def process_property_by_type(
             return
 
         display_text = f"{display_name}:"
-        check_manager.add_display(
-            target_name=target_name,
-            namespace=namespace,
-            display=Padding(display_text, padding)
-        )
+        check_manager.add_display(target_name=target_name, namespace=namespace, display=Padding(display_text, padding))
 
         for property in properties:
             display_text = f"- {display_name} {properties.index(property) + 1}"
             check_manager.add_display(
-                target_name=target_name,
-                namespace=namespace,
-                display=Padding(display_text, (0, 0, 0, padding_left + 2))
+                target_name=target_name, namespace=namespace, display=Padding(display_text, (0, 0, 0, padding_left + 2))
             )
             for prop, value in property.items():
                 display_text = f"{prop}: [cyan]{value}[/cyan]"
                 check_manager.add_display(
                     target_name=target_name,
                     namespace=namespace,
-                    display=Padding(display_text, (0, 0, 0, padding_left + PADDING_SIZE))
+                    display=Padding(display_text, (0, 0, 0, padding_left + PADDING_SIZE)),
                 )
     elif isinstance(properties, str) or isinstance(properties, bool) or isinstance(properties, int):
         properties = str(properties) if properties else "undefined"
@@ -686,31 +750,19 @@ def process_property_by_type(
             display_text = f"{display_name}: [cyan]{properties}[/cyan]"
         else:
             check_manager.add_display(
-                target_name=target_name,
-                namespace=namespace,
-                display=Padding(f"{display_name}:", padding)
+                target_name=target_name, namespace=namespace, display=Padding(f"{display_name}:", padding)
             )
             display_text = f"[cyan]{properties}[/cyan]"
             padding = (0, 0, 0, padding_left + 4)
 
-        check_manager.add_display(
-            target_name=target_name,
-            namespace=namespace,
-            display=Padding(display_text, padding)
-        )
+        check_manager.add_display(target_name=target_name, namespace=namespace, display=Padding(display_text, padding))
     elif isinstance(properties, dict):
         display_text = f"{display_name}:"
-        check_manager.add_display(
-            target_name=target_name,
-            namespace=namespace,
-            display=Padding(display_text, padding)
-        )
+        check_manager.add_display(target_name=target_name, namespace=namespace, display=Padding(display_text, padding))
         for prop, value in properties.items():
             display_text = f"{prop}: [cyan]{value}[/cyan]"
             check_manager.add_display(
-                target_name=target_name,
-                namespace=namespace,
-                display=Padding(display_text, (0, 0, 0, padding_left + 2))
+                target_name=target_name, namespace=namespace, display=Padding(display_text, (0, 0, 0, padding_left + 2))
             )
 
 
@@ -722,19 +774,11 @@ def add_display_and_eval(
     eval_value: str,
     resource_name: Optional[str] = None,
     namespace: str = ALL_NAMESPACES_TARGET,
-    padding: Tuple[int, int, int, int] = (0, 0, 0, 8)
+    padding: Tuple[int, int, int, int] = (0, 0, 0, 8),
 ) -> None:
-    check_manager.add_display(
-        target_name=target_name,
-        namespace=namespace,
-        display=Padding(display_text, padding)
-    )
+    check_manager.add_display(target_name=target_name, namespace=namespace, display=Padding(display_text, padding))
     check_manager.add_target_eval(
-        target_name=target_name,
-        namespace=namespace,
-        status=eval_status,
-        value=eval_value,
-        resource_name=resource_name
+        target_name=target_name, namespace=namespace, status=eval_status, value=eval_value, resource_name=resource_name
     )
 
 
@@ -764,28 +808,24 @@ def process_dict_resource(
     resource: dict,
     namespace: str,
     padding: int,
-    prop_name: Optional[str] = None
+    prop_name: Optional[str] = None,
 ) -> None:
     if prop_name:
         check_manager.add_display(
-            target_name=target_name,
-            namespace=namespace,
-            display=Padding(f"{prop_name}:", (0, 0, 0, padding))
+            target_name=target_name, namespace=namespace, display=Padding(f"{prop_name}:", (0, 0, 0, padding))
         )
         padding += PADDING_SIZE
     for key, value in resource.items():
         if isinstance(value, dict):
             check_manager.add_display(
-                target_name=target_name,
-                namespace=namespace,
-                display=Padding(f"{key}:", (0, 0, 0, padding))
+                target_name=target_name, namespace=namespace, display=Padding(f"{key}:", (0, 0, 0, padding))
             )
             process_dict_resource(
                 check_manager=check_manager,
                 target_name=target_name,
                 resource=value,
                 namespace=namespace,
-                padding=padding + PADDING_SIZE
+                padding=padding + PADDING_SIZE,
             )
         elif isinstance(value, list):
             if len(value) == 0:
@@ -793,9 +833,7 @@ def process_dict_resource(
 
             display_text = f"{key}:"
             check_manager.add_display(
-                target_name=target_name,
-                namespace=namespace,
-                display=Padding(display_text, (0, 0, 0, padding))
+                target_name=target_name, namespace=namespace, display=Padding(display_text, (0, 0, 0, padding))
             )
 
             process_list_resource(
@@ -803,29 +841,22 @@ def process_dict_resource(
                 target_name=target_name,
                 resource=value,
                 namespace=namespace,
-                padding=padding + PADDING_SIZE
+                padding=padding + PADDING_SIZE,
             )
         else:
             display_text = f"{key}: "
             value_padding = padding
             if isinstance(value, str) and len(value) > 50:
                 check_manager.add_display(
-                    target_name=target_name,
-                    namespace=namespace,
-                    display=Padding(display_text, (0, 0, 0, padding))
+                    target_name=target_name, namespace=namespace, display=Padding(display_text, (0, 0, 0, padding))
                 )
                 value_padding += PADDING_SIZE
                 display_text = ""
             display_text += process_value_color(
-                check_manager=check_manager,
-                target_name=target_name,
-                key=key,
-                value=value
+                check_manager=check_manager, target_name=target_name, key=key, value=value
             )
             check_manager.add_display(
-                target_name=target_name,
-                namespace=namespace,
-                display=Padding(display_text, (0, 0, 0, value_padding))
+                target_name=target_name, namespace=namespace, display=Padding(display_text, (0, 0, 0, value_padding))
             )
 
 
@@ -837,20 +868,13 @@ def process_value_color(
 ) -> str:
     value = value if value else "N/A"
     if "error" in str(key).lower() and str(value).lower() not in ["null", "n/a", "none", "noerror"]:
-        check_manager.set_target_status(
-            target_name=target_name,
-            status=CheckTaskStatus.error.value
-        )
+        check_manager.set_target_status(target_name=target_name, status=CheckTaskStatus.error.value)
         return f"[red]{value}[/red]"
     return f"[cyan]{value}[/cyan]"
 
 
 def process_list_resource(
-    check_manager: CheckManager,
-    target_name: str,
-    resource: List[dict],
-    namespace: str,
-    padding: int
+    check_manager: CheckManager, target_name: str, resource: List[dict], namespace: str, padding: int
 ) -> None:
     for item in resource:
         name = item.pop("name", None)
@@ -860,13 +884,13 @@ def process_list_resource(
             check_manager.add_display(
                 target_name=target_name,
                 namespace=namespace,
-                display=Padding(f"- name: [cyan]{name}[/cyan]", (0, 0, 0, padding))
+                display=Padding(f"- name: [cyan]{name}[/cyan]", (0, 0, 0, padding)),
             )
         else:
             check_manager.add_display(
                 target_name=target_name,
                 namespace=namespace,
-                display=Padding(f"- item {resource.index(item) + 1}", (0, 0, 0, padding))
+                display=Padding(f"- item {resource.index(item) + 1}", (0, 0, 0, padding)),
             )
 
         if isinstance(item, dict):
@@ -875,13 +899,13 @@ def process_list_resource(
                 target_name=target_name,
                 resource=item,
                 namespace=namespace,
-                padding=padding + 2
+                padding=padding + 2,
             )
         elif isinstance(item, str):
             check_manager.add_display(
                 target_name=target_name,
                 namespace=namespace,
-                display=Padding(f"[cyan]{item}[/cyan]", (0, 0, 0, padding + 2))
+                display=Padding(f"[cyan]{item}[/cyan]", (0, 0, 0, padding + 2)),
             )
 
 
