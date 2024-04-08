@@ -1,0 +1,49 @@
+name: AIO CLI integration tests with custom template
+
+on:
+  workflow_dispatch:
+    inputs:
+      resource-group:
+        type: string
+        default: ops-cli-int-test-rg
+
+permissions: 
+    id-token: write
+    contents: read
+
+jobs:
+    create-template:
+      outputs:
+        template: ${{ steps.aio-template.outputs.template }}
+      runs-on: ubuntu-latest
+      steps:
+        - name: 'New cluster to create a valid config'
+          run: |
+            curl -sfL https://get.k3s.io | K3S_KUBECONFIG_MODE="644" INSTALL_K3S_EXEC="server" sh -s -
+        - name: 'Copy kubeconfig'
+          run: |
+            mkdir -p $HOME/.kube
+            echo "$(sudo k3s kubectl config view --raw)" > $HOME/.kube/config
+            chmod 644 $HOME/.kube/config
+            export KUBECONFIG=$HOME/.kube/config
+        - name: 'Create AIO Template'
+          id: aio-template
+          run: |
+            az extension add --name azure-iot-ops -y
+            echo 'template<<EOF' >> $GITHUB_OUTPUT
+            echo "$(az iot ops init --cluster test -g ${{ inputs.resource-group }} --show-template)" >> $GITHUB_OUTPUT
+            echo 'EOF' >> $GITHUB_OUTPUT
+          
+    run-integration-tests:
+        uses: c-ryan-k/azure-iot-ops-cli-extension/.github/workflows/int_test.yml@kv_param_fix
+        needs: [create-template]
+        with:
+            resource-group: ${{ inputs.resource-group || 'ops-cli-int-test-rg' }}
+            template-content: ${{ needs.create-template.outputs.template }}
+        secrets:
+            AZURE_CLIENT_ID: ${{ secrets.AZURE_CLIENT_ID }}
+            AZURE_SUBSCRIPTION_ID: ${{ secrets.AZURE_SUBSCRIPTION_ID }}
+            AZURE_TENANT_ID: ${{ secrets.AZURE_TENANT_ID }}
+            AIO_SP_APP_ID: ${{ secrets.AIO_SP_APP_ID }}
+            AIO_SP_OBJECT_ID: ${{ secrets.AIO_SP_OBJECT_ID }}
+            AIO_SP_SECRET: ${{ secrets.AIO_SP_SECRET }}
