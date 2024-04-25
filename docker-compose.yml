@@ -4,7 +4,7 @@
 services:
 
   cluster:
-    image: "rancher/k3s:${K3S_VERSION:-latest}"
+    image: rancher/k3s
     command: server
     tmpfs:
     - /run
@@ -27,8 +27,9 @@ services:
     - 6443:6443  # Kubernetes API Server
     - 80:80      # Ingress controller port 80
     - 443:443    # Ingress controller port 443
+    # network_mode: host
   tests:
-    image: azure/azure-iot-ops-cli-test:latest
+    image: azure/azure-iot-ops-cli-int-tests:latest
     environment:
       - KUBECONFIG=~/.kube/config
 volumes:
