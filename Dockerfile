@@ -15,7 +15,7 @@ RUN python3 -m venv $VIRTUAL_ENV
 ENV PATH="$VIRTUAL_ENV/bin:$PATH"
 
 # tox setup
-RUN pip install tox && tox r -vv -e python-int --notest
+RUN pip install tox && tox r -vv -e python-int-edge --notest
 
 # run tests
-ENTRYPOINT ["tox", "-e", "python-int"]
+ENTRYPOINT ["tox", "-e", "python-int-edge"]
