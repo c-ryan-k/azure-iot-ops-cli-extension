@@ -57,20 +57,20 @@ env:
   RESOURCE_GROUP: "${{ inputs.resource-group }}"
 
 jobs:
-  create_kv:
-    runs-on: ubuntu-22.04
-    steps:
-    - name: "Az CLI login"
-      uses: azure/login@v2
-      with:
-        client-id: ${{ secrets.AZURE_CLIENT_ID }}
-        tenant-id: ${{ secrets.AZURE_TENANT_ID }}
-        subscription-id: ${{ secrets.AZURE_SUBSCRIPTION_ID }}
-    - name: "Create Key Vault for clusters"
-      run: az keyvault create -n ${{ env.KV_NAME }} -g ${{ env.RESOURCE_GROUP }} --enable-rbac-authorization false
+  # create_kv:
+  #   runs-on: ubuntu-22.04
+  #   steps:
+  #   - name: "Az CLI login"
+  #     uses: azure/login@v2
+  #     with:
+  #       client-id: ${{ secrets.AZURE_CLIENT_ID }}
+  #       tenant-id: ${{ secrets.AZURE_TENANT_ID }}
+  #       subscription-id: ${{ secrets.AZURE_SUBSCRIPTION_ID }}
+  #   - name: "Create Key Vault for clusters"
+  #     run: az keyvault create -n ${{ env.KV_NAME }} -g ${{ env.RESOURCE_GROUP }} --enable-rbac-authorization false
     
   test:
-    needs: [create_kv]
+    # needs: [create_kv]
     outputs:
       CLUSTER_PREFIX: "az-iot-ops-test-cluster${{ github.run_number }}"
       RESOURCE_GROUP: ${{ env.RESOURCE_GROUP }}
@@ -153,16 +153,16 @@ jobs:
           client-id: ${{ secrets.AZURE_CLIENT_ID }}
           tenant-id: ${{ secrets.AZURE_TENANT_ID }}
           subscription-id: ${{ secrets.AZURE_SUBSCRIPTION_ID }}
-      - name: "ARC connect cluster"
-        uses: azure/azure-iot-ops-cli-extension/.github/actions/connect-arc@dev
-        with:
-          cluster-name: ${{ env.CLUSTER_NAME }}
-          resource-group: ${{ env.RESOURCE_GROUP }}
-          custom-locations-oid: ${{ env.CUSTOM_LOCATIONS_OID }}
-      - name: "Get Keyvault ID"
-        run: |
-          KV_ID=$(az keyvault show -n ${{env.KV_NAME}} -g ${{ env.RESOURCE_GROUP }} -o tsv --query id)
-          echo "KV_ID=$KV_ID" >> $GITHUB_ENV
+      # - name: "ARC connect cluster"
+      #   uses: azure/azure-iot-ops-cli-extension/.github/actions/connect-arc@dev
+      #   with:
+      #     cluster-name: ${{ env.CLUSTER_NAME }}
+      #     resource-group: ${{ env.RESOURCE_GROUP }}
+      #     custom-locations-oid: ${{ env.CUSTOM_LOCATIONS_OID }}
+      # - name: "Get Keyvault ID"
+      #   run: |
+      #     KV_ID=$(az keyvault show -n ${{env.KV_NAME}} -g ${{ env.RESOURCE_GROUP }} -o tsv --query id)
+      #     echo "KV_ID=$KV_ID" >> $GITHUB_ENV
       - name: "Create CA certificates"
         if: ${{matrix.feature == 'ca-certs'}}
         run: |
@@ -184,25 +184,25 @@ jobs:
           openssl ecparam -name prime256v1 -genkey -noout -out ${{ matrix.ca-key-file }}
           openssl req -new -x509 -key ${{ matrix.ca-key-file }} -days 30 -config ca.conf -out ${{ matrix.ca-file }}
           rm ca.conf
-      - name: "AIO Deployment"
-        uses: azure/azure-iot-ops-cli-extension/.github/actions/deploy-aio@dev
-        with:
-          cluster: ${{ env.CLUSTER_NAME }}
-          resource-group: ${{ env.RESOURCE_GROUP }}
-          keyvault-id: ${{ env.KV_ID }}
-          sp-app-id: ${{ secrets.AIO_SP_APP_ID || '' }}
-          sp-object-id: ${{ secrets.AIO_SP_OBJECT_ID || '' }}
-          sp-secret: ${{ secrets.AIO_SP_SECRET || '' }}
-          no-preflight: ${{ matrix.no-preflight }}
-          mq-insecure: ${{ matrix.mq-insecure }}
-          disable-rsync-rules: ${{ matrix.disable-rsync-rules }}
-          ca-valid-days: ${{ matrix.ca-valid-days || '' }}
-          ca-file: ${{ matrix.ca-file || '' }}
-          ca-key-file: ${{ matrix.ca-key-file || '' }}
-          kv-sat-secret-name: ${{ matrix.kv-sat-secret-name || '' }}
-      - name: "Allow cluster to finish provisioning"
-        run: |
-          sleep 2m
+      # - name: "AIO Deployment"
+      #   uses: azure/azure-iot-ops-cli-extension/.github/actions/deploy-aio@dev
+      #   with:
+      #     cluster: ${{ env.CLUSTER_NAME }}
+      #     resource-group: ${{ env.RESOURCE_GROUP }}
+      #     keyvault-id: ${{ env.KV_ID }}
+      #     sp-app-id: ${{ secrets.AIO_SP_APP_ID || '' }}
+      #     sp-object-id: ${{ secrets.AIO_SP_OBJECT_ID || '' }}
+      #     sp-secret: ${{ secrets.AIO_SP_SECRET || '' }}
+      #     no-preflight: ${{ matrix.no-preflight }}
+      #     mq-insecure: ${{ matrix.mq-insecure }}
+      #     disable-rsync-rules: ${{ matrix.disable-rsync-rules }}
+      #     ca-valid-days: ${{ matrix.ca-valid-days || '' }}
+      #     ca-file: ${{ matrix.ca-file || '' }}
+      #     ca-key-file: ${{ matrix.ca-key-file || '' }}
+      #     kv-sat-secret-name: ${{ matrix.kv-sat-secret-name || '' }}
+      # - name: "Allow cluster to finish provisioning"
+      #   run: |
+      #     sleep 2m
       # - name: "Tox test environment setup"
       #   if: ${{matrix.feature == 'default'}}
       #   run: |
