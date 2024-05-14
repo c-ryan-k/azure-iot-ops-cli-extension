@@ -239,7 +239,7 @@ jobs:
           IMAGE="aziotops.azurecr.io/aziotops/cli-extension-tests:$IMAGE_TAG"
           
           az acr login --name "aziotops"
-          log "Using tag: $IMAGE_TAG"
+          echo "Using tag: $IMAGE_TAG"
           docker pull "$IMAGE"
           tempLog=$(mktemp -d)
           set +e
