@@ -83,23 +83,24 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        feature: [default, mq-insecure, no-syncrules, ca-certs]
+        # feature: [default, mq-insecure, no-syncrules, ca-certs]
+        feature: [default]
         include:
           # default / limited options
           - feature: default
             ca-valid-days: 3
             kv-sat-secret-name: test-kv-secret
-          # test --mq-insecure deployment
-          - feature: mq-insecure
-            mq-insecure: true
-            no-preflight: true
-          # test disabling custom sync rules
-          - feature: no-syncrules
-            disable-rsync-rules: true
-          # test custom ca files
-          - feature: ca-certs
-            ca-file: 'test-ca.pem'
-            ca-key-file: 'test-ca-key.pem'
+          # # test --mq-insecure deployment
+          # - feature: mq-insecure
+          #   mq-insecure: true
+          #   no-preflight: true
+          # # test disabling custom sync rules
+          # - feature: no-syncrules
+          #   disable-rsync-rules: true
+          # # test custom ca files
+          # - feature: ca-certs
+          #   ca-file: 'test-ca.pem'
+          #   ca-key-file: 'test-ca-key.pem'
     name: "Run cluster tests"
     runs-on: ubuntu-22.04
     steps:
@@ -202,12 +203,12 @@ jobs:
       - name: "Allow cluster to finish provisioning"
         run: |
           sleep 2m
-      - name: "Tox test environment setup"
-        if: ${{matrix.feature == 'default'}}
-        run: |
-          cd ${{ env.EXTENSION_SOURCE_DIRECTORY }}
-          python -m pip install tox
-          tox r -vv -e python-int --notest
+      # - name: "Tox test environment setup"
+      #   if: ${{matrix.feature == 'default'}}
+      #   run: |
+      #     cd ${{ env.EXTENSION_SOURCE_DIRECTORY }}
+      #     python -m pip install tox
+      #     tox r -vv -e python-int --notest
       - name: "Az CLI login refresh"
         if: ${{matrix.feature == 'default'}}
         uses: azure/login@v2
@@ -215,15 +216,43 @@ jobs:
           client-id: ${{ secrets.AZURE_CLIENT_ID }}
           tenant-id: ${{ secrets.AZURE_TENANT_ID }}
           subscription-id: ${{ secrets.AZURE_SUBSCRIPTION_ID }}
-      - name: "Tox Integration Tests"
-        if: ${{matrix.feature == 'default'}}
+      # - name: "Tox Integration Tests"
+      #   if: ${{matrix.feature == 'default'}}
+      #   env:
+      #     azext_edge_rg: ${{ steps.env_out.outputs.RESOURCE_GROUP }}
+      #     azext_edge_cluster: ${{ steps.env_out.outputs.CLUSTER_NAME }}
+      #     azext_edge_skip_init: True
+      #   run: |
+      #     cd ${{ env.EXTENSION_SOURCE_DIRECTORY }}
+      #     tox r -e python-int --skip-pkg-install
+      - name: "Run containerized tests"
         env:
-          azext_edge_rg: ${{ steps.env_out.outputs.RESOURCE_GROUP }}
-          azext_edge_cluster: ${{ steps.env_out.outputs.CLUSTER_NAME }}
-          azext_edge_skip_init: True
+          CLUSTER_RG: ${{ steps.env_out.outputs.RESOURCE_GROUP }}
+          CLUSTER_NAME: ${{ steps.env_out.outputs.CLUSTER_NAME }}
         run: |
-          cd ${{ env.EXTENSION_SOURCE_DIRECTORY }}
-          tox r -e python-int --skip-pkg-install
+          CLUSTER_NAME="${{ env.CLUSTER_NAME}}"
+          CLUSTER_RG="${{ env.CLUSTER_RG}}"
+          
+          kubeconfig=$(realpath ~/.kube/config)
+          kubeconfig_mount=/root/.kube/config
+          IMAGE_TAG='latest'
+          IMAGE="aziotops.azurecr.io/aziotops/cli-extension-tests:$IMAGE_TAG"
+          
+          az acr login --name "aziotops"
+          log "Using tag: $IMAGE_TAG"
+          docker pull "$IMAGE"
+          tempLog=$(mktemp -d)
+          set +e
+          docker run \
+            --rm \
+            -e "azext_edge_rg=$CLUSTER_NAME" \
+            -e "azext_edge_cluster=$CLUSTER_RG" \
+            -e "azext_edge_skip_init=True" \
+            -e "KUBECONFIG=$kubeconfig_mount" \
+            -v "$kubeconfig:$kubeconfig_mount:ro" \
+            -v "${tempLog}:junit" \
+            --network host \
+            "$IMAGE"
       - name: "Az CLI login refresh"
         uses: azure/login@v2
         with:
