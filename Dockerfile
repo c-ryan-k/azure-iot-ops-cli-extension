@@ -6,7 +6,7 @@ WORKDIR /usr/src/azure-iot-ops
 # copy all source to working dir
 COPY . .
 
-# create empty kubeconfig to mount later
+# create empty kubeconfig to mount later as a file
 RUN mkdir -p /root/.kube && touch /root/.kube/config 
 
 # venv
@@ -15,7 +15,10 @@ RUN python3 -m venv $VIRTUAL_ENV
 ENV PATH="$VIRTUAL_ENV/bin:$PATH"
 
 # tox setup
-RUN pip install tox && tox r -vv -e python-int-edge --notest
+RUN pip install tox
+
+# currently using smaller image, longer runtime dependency download
+# RUN tox r -vv -e python-int-edge --notest
 
 # run tests
-ENTRYPOINT ["tox", "-e", "python-int-edge"]
+ENTRYPOINT ["tox", "r", "-vv", "-e", "python-int-edge"]
