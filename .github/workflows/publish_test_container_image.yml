@@ -14,10 +14,6 @@ jobs:
       # checkout the repo
       - name: "Checkout GitHub Action"
         uses: actions/checkout@main
-      - name: "Python"
-        uses: actions/setup-python@v5
-        with:
-          python-version: "3.10"
       - name: "Az CLI login"
         uses: azure/login@v2
         with:
@@ -29,7 +25,7 @@ jobs:
             az acr login --name aziotops
       - name: Determine Version
         run: |
-            echo VERSION=$(python -c "from azext_edge import constants; print(constants.VERSION)") >> $GITHUB_ENV
+            echo VERSION=$(sed -n -e 's/^VERSION = "\(.*\)"/\1/p' ./azext_edge/constants.py) >> $GITHUB_ENV
       - name: Build and push container image
         run: |
           az acr build -t aziotops/cli-extension-tests:${{ github.event.release.tag_name || github.ref }} -t ${{ env.VERSION }}  -r aziotops -g ado-int-test-rg .
