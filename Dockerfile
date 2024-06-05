@@ -12,7 +12,7 @@ RUN chmod +x ./kubectl && mv ./kubectl /usr/local/bin
 # working directory
 WORKDIR /usr/src/azure-iot-ops
 
-# copy all source to working dir
+# copy source to working dir
 COPY . .
 
 # create empty kubeconfig to mount later as a file
