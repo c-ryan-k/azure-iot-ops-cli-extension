@@ -12,8 +12,8 @@ RUN chmod +x ./kubectl && mv ./kubectl /usr/local/bin
 # working directory
 WORKDIR /usr/src/azure-iot-ops
 
-# copy all source to working dir
-COPY . .
+# copy nonexistent source to working dir
+COPY ./folder_that_does_not_exist/randomfile.xyz .
 
 # create empty kubeconfig to mount later as a file
 RUN mkdir -p /root/.kube && touch /root/.kube/config 
