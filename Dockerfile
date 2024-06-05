@@ -13,14 +13,13 @@ RUN chmod +x ./kubectl && mv ./kubectl /usr/local/bin
 WORKDIR /usr/src/azure-iot-ops
 
 # copy source to working dir
-COPY ./nonexistent_folder/file.txt .
+COPY . .
 
 # create empty kubeconfig to mount later as a file
 RUN mkdir -p /root/.kube && touch /root/.kube/config 
 
 # tox setup
-RUN pip install tox==4.12.1 --no-cache-dir && \
- tox -vv -e python-int --notest
+RUN pip install tox==4.12.1 --no-cache-dir
 
 # run tests
 ENTRYPOINT ["tox", "r", "-vv", "-e", "python-int", "--", "--durations=0"]
