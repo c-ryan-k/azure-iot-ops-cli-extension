@@ -79,5 +79,5 @@ jobs:
       - name: Delete clusters
         run: |
           for cluster in $(az connectedk8s list -g ${{ env.RESOURCE_GROUP }} --query "[?starts_with(name, '${{ env.CLUSTER_PREFIX }}')].name" -o tsv); do
-            az iot ops delete --cluster $cluster -g ${{ env.RESOURCE_GROUP }} -y
+            az iot ops delete --cluster $cluster -g ${{ env.RESOURCE_GROUP }} --force
           done
