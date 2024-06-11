@@ -71,13 +71,13 @@ jobs:
           client-id: ${{ secrets.AZURE_CLIENT_ID }}
           tenant-id: ${{ secrets.AZURE_TENANT_ID }}
           subscription-id: ${{ secrets.AZURE_SUBSCRIPTION_ID }}
+      - name: Install extensions
+        run: |
+          az extension add -n connectedk8s -y
+          # TODO - install from source
+          az extension add -n azure-iot-ops -y
       - name: Delete clusters
-        uses: azure/cli@v2
-        with:
-          inlineScript: |
-            az extension add -n connectedk8s -y
-            # TODO - install from source
-            az extension add -n azure-iot-ops -y
-            for cluster in $(az connectedk8s list -g ${{ env.RESOURCE_GROUP }} --query "[?starts_with(name, '${{ env.CLUSTER_PREFIX }}')].name" -o tsv); do
-              az iot ops delete --cluster $cluster -g ${{ env.RESOURCE_GROUP }} -y
-            done
+        run: |
+          for cluster in $(az connectedk8s list -g ${{ env.RESOURCE_GROUP }} --query "[?starts_with(name, '${{ env.CLUSTER_PREFIX }}')].name" -o tsv); do
+            az iot ops delete --cluster $cluster -g ${{ env.RESOURCE_GROUP }} -y
+          done
