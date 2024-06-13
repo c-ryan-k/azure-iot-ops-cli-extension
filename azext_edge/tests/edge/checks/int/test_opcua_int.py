@@ -26,7 +26,7 @@ logger = get_logger(__name__)
 @pytest.mark.parametrize("detail_level", ResourceOutputDetailLevel.list())
 @pytest.mark.parametrize("resource_kind", OpcuaResourceKinds.list() + [None])
 # TODO: figure out if name match should be a general test vs each service (minimize test runs)
-@pytest.mark.parametrize("resource_match", [None, "*opc-supervisor*", generate_names()])
+@pytest.mark.parametrize("resource_match", [None, "*opc-supervisor*", sorted(generate_names())])
 def test_opcua_check(init_setup, detail_level, resource_match, resource_kind):
     post_deployment, opcua_present = run_check_command(
         detail_level=detail_level,
