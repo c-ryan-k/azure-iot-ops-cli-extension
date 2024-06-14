@@ -156,13 +156,14 @@ jobs:
           # $url = "https://aka.ms/aks-edge/k3s-msi-1.26"
           $url = "https://aka.ms/aks-edge/k3s-msi"
           Invoke-WebRequest -Uri $url -OutFile .\aks-edge.msi
+          $installer = $(Get-Item .\aks-edge.msi).FullName
           
           # enable execution
           Set-ExecutionPolicy RemoteSigned -Scope Process -Force
-          Unblock-File .\aks-edge.msi
+          Unblock-File $installer
           
           # install
-          msiexec.exe /i .\aks-edge.msi
+          msiexec.exe /i $installer
           
           # Check modules
           Import-Module AksEdge
