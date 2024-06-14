@@ -61,20 +61,20 @@ env:
   RESOURCE_GROUP: "${{ inputs.resource-group }}"
 
 jobs:
-  create_kv:
-    runs-on: ubuntu-22.04
-    steps:
-    - name: "Az CLI login"
-      uses: azure/login@v2
-      with:
-        client-id: ${{ secrets.AZURE_CLIENT_ID }}
-        tenant-id: ${{ secrets.AZURE_TENANT_ID }}
-        subscription-id: ${{ secrets.AZURE_SUBSCRIPTION_ID }}
-    - name: "Create Key Vault for clusters"
-      run: az keyvault create -n ${{ env.KV_NAME }} -g ${{ env.RESOURCE_GROUP }} --enable-rbac-authorization false
+  # create_kv:
+  #   runs-on: ubuntu-22.04
+  #   steps:
+  #   - name: "Az CLI login"
+  #     uses: azure/login@v2
+  #     with:
+  #       client-id: ${{ secrets.AZURE_CLIENT_ID }}
+  #       tenant-id: ${{ secrets.AZURE_TENANT_ID }}
+  #       subscription-id: ${{ secrets.AZURE_SUBSCRIPTION_ID }}
+  #   - name: "Create Key Vault for clusters"
+  #     run: az keyvault create -n ${{ env.KV_NAME }} -g ${{ env.RESOURCE_GROUP }} --enable-rbac-authorization false
 
   test:
-    needs: [create_kv]
+    # needs: [create_kv]
     outputs:
       CLUSTER_PREFIX: "az-iot-ops-test-cluster${{ github.run_number }}"
       RESOURCE_GROUP: ${{ env.RESOURCE_GROUP }}
