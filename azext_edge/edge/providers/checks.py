@@ -30,7 +30,7 @@ console = Console(width=100, highlight=False)
 
 def run_checks(
     detail_level: int = ResourceOutputDetailLevel.summary.value,
-    ops_service: str = OpsServiceType.mq.value,
+    ops_service: str = None,
     pre_deployment: bool = True,
     post_deployment: bool = True,
     as_list: bool = False,
@@ -49,7 +49,7 @@ def run_checks(
         sleep(0.5)
 
         title_subject = (
-            f"{{[bright_blue]{ops_service}[/bright_blue]}} service deployment"
+            f"{{[bright_blue]{ops_service or 'IoT Operations'}[/bright_blue]}} service deployment"
             if post_deployment
             else "[bright_blue]IoT Operations readiness[/bright_blue]"
         )
@@ -67,13 +67,20 @@ def run_checks(
                 OpsServiceType.lnm.value: check_lnm_deployment,
                 OpsServiceType.opcua.value: check_opcua_deployment,
             }
-            service_check_dict[ops_service](
-                detail_level=detail_level,
-                resource_name=resource_name,
-                result=result,
-                as_list=as_list,
-                resource_kinds=resource_kinds
-            )
+            if ops_service:
+                service_check_dict = {
+                    key: service_check_dict[key]
+                    for key in service_check_dict
+                    if key == ops_service
+                }
+            for svc in service_check_dict:
+                service_check_dict[svc](
+                    detail_level=detail_level,
+                    resource_name=resource_name,
+                    result=result,
+                    as_list=as_list,
+                    resource_kinds=resource_kinds
+                )
 
         if as_list:
             return display_as_list(console=console, result=result)
