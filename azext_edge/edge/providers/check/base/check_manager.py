@@ -81,28 +81,26 @@ class CheckManager:
         if target_name not in self.targets:
             # Create a default `None` namespace target for targets with no namespace
             self.targets[target_name] = {}
-        if namespace and namespace not in self.targets[target_name]:
-            self.targets[target_name][namespace] = {}
-        self.targets[target_name][namespace]["conditions"] = conditions
-        self.targets[target_name][namespace]["evaluations"] = []
-        self.targets[target_name][namespace]["status"] = CheckTaskStatus.success.value
+        self.targets[target_name]["conditions"] = conditions
+        self.targets[target_name]["evaluations"] = []
+        self.targets[target_name]["status"] = CheckTaskStatus.success.value
         if description:
-            self.targets[target_name][namespace]["description"] = description
+            self.targets[target_name]["description"] = description
 
     def set_target_conditions(
         self, target_name: str, conditions: List[str], namespace: str = ALL_NAMESPACES_TARGET
     ) -> None:
-        self.targets[target_name][namespace]["conditions"] = conditions
+        self.targets[target_name]["conditions"] = conditions
 
     def add_target_conditions(
         self, target_name: str, conditions: List[str], namespace: str = ALL_NAMESPACES_TARGET
     ) -> None:
-        if self.targets[target_name][namespace]["conditions"] is None:
-            self.targets[target_name][namespace]["conditions"] = []
-        self.targets[target_name][namespace]["conditions"].extend(conditions)
+        if self.targets[target_name]["conditions"] is None:
+            self.targets[target_name]["conditions"] = []
+        self.targets[target_name]["conditions"].extend(conditions)
 
     def set_target_status(self, target_name: str, status: str, namespace: str = ALL_NAMESPACES_TARGET) -> None:
-        self._process_status(target_name=target_name, namespace=namespace, status=status)
+        self._process_status(target_name=target_name, status=status)
 
     def add_target_eval(
         self,
@@ -120,8 +118,8 @@ class CheckManager:
             eval_dict["value"] = value
         if resource_kind:
             eval_dict["kind"] = resource_kind
-        self.targets[target_name][namespace]["evaluations"].append(eval_dict)
-        self._process_status(target_name, status, namespace)
+        self.targets[target_name]["evaluations"].append(eval_dict)
+        self._process_status(target_name, status,)
 
     def _process_status(self, target_name: str, status: str, namespace: str = ALL_NAMESPACES_TARGET) -> None:
         existing_status = self.targets[target_name].get("status", CheckTaskStatus.success.value)
@@ -131,20 +129,18 @@ class CheckManager:
                 CheckTaskStatus.error.value,
                 CheckTaskStatus.skipped.value,
             ]:
-                self.targets[target_name][namespace]["status"] = status
+                self.targets[target_name]["status"] = status
                 self.worst_status = status
             elif existing_status in [
                 CheckTaskStatus.warning.value, CheckTaskStatus.skipped.value
             ] and status in [CheckTaskStatus.error.value]:
-                self.targets[target_name][namespace]["status"] = status
+                self.targets[target_name]["status"] = status
                 self.worst_status = status
 
     def add_display(self, target_name: str, display: Any, namespace: str = ALL_NAMESPACES_TARGET) -> None:
         if target_name not in self.target_displays:
-            self.target_displays[target_name] = {}
-        if namespace not in self.target_displays[target_name]:
-            self.target_displays[target_name][namespace] = []
-        self.target_displays[target_name][namespace].append(display)
+            self.target_displays[target_name] = []
+        self.target_displays[target_name].append(display)
 
     def as_dict(self, as_list: bool = False) -> Dict[str, Any]:
         from copy import deepcopy
@@ -158,7 +154,6 @@ class CheckManager:
         result["targets"] = deepcopy(self.targets)
         if as_list:
             for type in self.target_displays:
-                for namespace in self.target_displays[type]:
-                    result["targets"][type][namespace]["displays"] = deepcopy(self.target_displays[type][namespace])
+                result["targets"][type]["displays"] = deepcopy(self.target_displays[type])
 
         return result

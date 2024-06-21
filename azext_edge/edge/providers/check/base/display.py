@@ -81,25 +81,18 @@ def display_as_list(console: Console, result: Dict[str, Any]) -> None:
             console.print(Padding(f"{prefix_emoji} {check['description']}", (0, 0, 0, 4)))
 
             targets = check.get("targets", {})
-            for type in targets:
-                for namespace in targets[type]:
-                    namespace_target = targets[type][namespace]
-                    displays = namespace_target.get("displays", [])
-                    status = namespace_target.get("status")
-                    for (idx, disp) in enumerate(displays):
-                        # display status indicator on each 'namespaced' grouping of displays
-                        if all([idx == 0, namespace != ALL_NAMESPACES_TARGET, status]):
-                            prefix_emoji = _get_emoji_from_status(status)
-                            console.print(Padding(f"\n{prefix_emoji} {disp.renderable}", (0, 0, 0, 6)))
-                        else:
-                            console.print(disp)
-                    target_status = targets[type][namespace].get("status")
-                    evaluations = targets[type][namespace].get("evaluations", [])
-                    if not evaluations:
-                        _increment_summary(target_status)
-                    for e in evaluations:
-                        eval_status = e.get("status")
-                        _increment_summary(eval_status)
+            for _target in targets:
+                target = targets[_target]
+                displays = target.get("displays", [])
+                for disp in displays:
+                    console.print(disp)
+                target_status = target.get("status")
+                evaluations = target.get("evaluations", [])
+                if not evaluations:
+                    _increment_summary(target_status)
+                for e in evaluations:
+                    eval_status = e.get("status")
+                    _increment_summary(eval_status)
             console.print(NewLine(1))
         console.print(NewLine(1))
 
