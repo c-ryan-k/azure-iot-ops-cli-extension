@@ -244,12 +244,10 @@ def test_assets_checks(
     assert result["targets"]["deviceregistry.microsoft.com"]
     target = result["targets"]["deviceregistry.microsoft.com"]
 
-    for namespace in target:
-        assert namespace in result["targets"]["deviceregistry.microsoft.com"]
-
-        target[namespace]["conditions"] = [] if not target[namespace]["conditions"] else target[namespace]["conditions"]
-        assert_conditions(target[namespace], namespace_conditions)
-        assert_evaluations(target[namespace], namespace_evaluations)
+    if not target["conditions"]:
+        target["conditions"] = []
+    assert_conditions(target, namespace_conditions)
+    assert_evaluations(target, namespace_evaluations)
 
 
 @pytest.mark.parametrize("detail_level", ResourceOutputDetailLevel.list())
@@ -437,9 +435,7 @@ def test_asset_endpoint_profiles_checks(
     assert result["targets"]["deviceregistry.microsoft.com"]
     target = result["targets"]["deviceregistry.microsoft.com"]
 
-    for namespace in target:
-        assert namespace in result["targets"]["deviceregistry.microsoft.com"]
-
-        target[namespace]["conditions"] = [] if not target[namespace]["conditions"] else target[namespace]["conditions"]
-        assert_conditions(target[namespace], namespace_conditions)
-        assert_evaluations(target[namespace], namespace_evaluations)
+    if not target["conditions"]:
+        target["conditions"] = []
+    assert_conditions(target, namespace_conditions)
+    assert_evaluations(target, namespace_evaluations)

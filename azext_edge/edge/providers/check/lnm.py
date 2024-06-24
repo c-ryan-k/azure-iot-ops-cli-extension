@@ -109,7 +109,7 @@ def evaluate_lnms(
 
     if not all_lnms:
         fetch_lnms_error_text = "Unable to fetch LNM instances in any namespaces."
-        check_manager.add_target(target_name=target_lnms)
+        check_manager.add_target(target_name=target_lnms, conditions=lnm_namespace_conditions)
         check_manager.add_display(target_name=target_lnms, display=Padding(fetch_lnms_error_text, (0, 0, 0, 8)))
         check_manager.add_target_eval(
             target_name=target_lnms,
@@ -323,7 +323,6 @@ def _process_lnm_pods(
         pods = filter_resources_by_name(resources=pods, resource_name=resource_name)
 
         if not pods:
-            check_manager.add_target(target_name=target)
             check_manager.add_display(target_name=target, display=Padding("Unable to fetch pods.", (0, 0, 0, padding + 2)))
             return
 

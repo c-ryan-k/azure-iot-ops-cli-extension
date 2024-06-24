@@ -7,7 +7,6 @@
 
 import pytest
 from azext_edge.edge.providers.check.common import (
-    ALL_NAMESPACES_TARGET,
     CoreServiceResourceKinds,
     ResourceOutputDetailLevel
 )
@@ -229,13 +228,10 @@ def test_lnm_checks(
 
     assert result["name"] == "evalLnms"
     assert result["targets"]["lnmz.layerednetworkmgmt.iotoperations.azure.com"]
+    target = result["targets"]["lnmz.layerednetworkmgmt.iotoperations.azure.com"]
 
-    if lnms:
-        assert namespace in result["targets"]["lnmz.layerednetworkmgmt.iotoperations.azure.com"]
-    else:
-        namespace = ALL_NAMESPACES_TARGET
-        assert namespace in result["targets"]["lnmz.layerednetworkmgmt.iotoperations.azure.com"]
-    target = result["targets"]["lnmz.layerednetworkmgmt.iotoperations.azure.com"][namespace]
+    if not target["conditions"]:
+        target["conditions"] = []
 
     assert_conditions(target, namespace_conditions)
     assert_evaluations(target, namespace_evaluations)
@@ -352,9 +348,7 @@ def test_evaluate_core_service_runtime(
     assert result["targets"][CoreServiceResourceKinds.RUNTIME_RESOURCE.value]
     target = result["targets"][CoreServiceResourceKinds.RUNTIME_RESOURCE.value]
 
-    for namespace in target:
-        assert namespace in result["targets"][CoreServiceResourceKinds.RUNTIME_RESOURCE.value]
-
-        target[namespace]["conditions"] = [] if not target[namespace]["conditions"] else target[namespace]["conditions"]
-        assert_conditions(target[namespace], namespace_conditions)
-        assert_evaluations(target[namespace], namespace_evaluations)
+    if not target["conditions"]:
+        target["conditions"] = []
+    assert_conditions(target, namespace_conditions)
+    assert_evaluations(target, namespace_evaluations)

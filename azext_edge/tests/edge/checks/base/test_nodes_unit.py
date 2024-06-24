@@ -100,20 +100,20 @@ def test_check_nodes(mocked_node_client):
     assert result["name"] == "evalClusterNodes"
 
     nodes = mocked_node_client.CoreV1Api().list_node.return_value.items
-    evaluation = result["targets"]["cluster/nodes"]["_all_"]["evaluations"]
+    evaluation = result["targets"]["cluster/nodes"]["evaluations"]
     if not nodes:
         assert result["status"] == "error"
         assert evaluation[0]["value"] == "No nodes detected."
         return
     elif len(nodes) > 1:
-        warning = result["targets"]["cluster/nodes"]["_all_"]["displays"][0].renderable
+        warning = result["targets"]["cluster/nodes"]["displays"][0].renderable
         assert "Currently, only single-node clusters are officially supported for AIO deployments" in warning
-        assert result["targets"]["cluster/nodes"]["_all_"]["status"] == "warning"
+        assert result["targets"]["cluster/nodes"]["status"] == "warning"
     else:
-        assert result["targets"]["cluster/nodes"]["_all_"]["status"] == "success"
+        assert result["targets"]["cluster/nodes"]["status"] == "success"
 
     assert len(result["targets"]) == (len(nodes) + 1)
-    table = result["targets"]["cluster/nodes"]["_all_"]["displays"][-1].renderable
+    table = result["targets"]["cluster/nodes"]["displays"][-1].renderable
     headers = [col.header for col in table.columns]
     assert headers == ["Name", "Architecture", "CPU (vCPU)", "Memory (GB)", "Storage (GB)"]
 
@@ -143,7 +143,7 @@ def test_check_nodes(mocked_node_client):
         assert "%.2f" % (parse_quantity(storage) / DISPLAY_BYTES_PER_GIGABYTE) in unpacked_cols[4][i]
 
         assert f"cluster/nodes/{name}" in result["targets"]
-        result_node = result["targets"][f"cluster/nodes/{name}"]["_all_"]
+        result_node = result["targets"][f"cluster/nodes/{name}"]
 
         arch_status = arch in AIO_SUPPORTED_ARCHITECTURES
         assert result_node["conditions"][0] == f"info.architecture in ({','.join(AIO_SUPPORTED_ARCHITECTURES)})"

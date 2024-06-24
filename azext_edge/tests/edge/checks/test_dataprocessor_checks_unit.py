@@ -21,7 +21,6 @@ from .conftest import (
 )
 from ...generators import generate_random_string
 from azext_edge.edge.providers.check.common import (
-    ALL_NAMESPACES_TARGET,
     ResourceOutputDetailLevel,
     DataSourceStageType,
 )
@@ -123,8 +122,7 @@ def test_instance_checks(
     result = evaluate_instances(detail_level=detail_level, resource_name=resource_name)
 
     assert result["name"] == "evalInstances"
-    assert namespace in result["targets"]["instances.dataprocessor.iotoperations.azure.com"]
-    target = result["targets"]["instances.dataprocessor.iotoperations.azure.com"][namespace]
+    target = result["targets"]["instances.dataprocessor.iotoperations.azure.com"]
 
     assert_conditions(target, namespace_conditions)
     assert_evaluations(target, namespace_evaluations)
@@ -1010,12 +1008,7 @@ def test_pipeline_checks(
     assert result["name"] == "evalPipelines"
     assert result["targets"]["pipelines.dataprocessor.iotoperations.azure.com"]
 
-    if pipelines:
-        assert namespace in result["targets"]["pipelines.dataprocessor.iotoperations.azure.com"]
-    else:
-        namespace = ALL_NAMESPACES_TARGET
-        assert namespace in result["targets"]["pipelines.dataprocessor.iotoperations.azure.com"]
-    target = result["targets"]["pipelines.dataprocessor.iotoperations.azure.com"][namespace]
+    target = result["targets"]["pipelines.dataprocessor.iotoperations.azure.com"]
 
     assert_conditions(target, conditions)
     assert_evaluations(target, evaluations)
@@ -1115,8 +1108,7 @@ def test_dataset_checks(
 
     assert result["name"] == "evalDatasets"
     assert result["targets"]["datasets.dataprocessor.iotoperations.azure.com"]
-    assert namespace in result["targets"]["datasets.dataprocessor.iotoperations.azure.com"]
-    target = result["targets"]["datasets.dataprocessor.iotoperations.azure.com"][namespace]
+    target = result["targets"]["datasets.dataprocessor.iotoperations.azure.com"]
 
     assert_conditions(target, namespace_conditions)
     assert_evaluations(target, namespace_evaluations)

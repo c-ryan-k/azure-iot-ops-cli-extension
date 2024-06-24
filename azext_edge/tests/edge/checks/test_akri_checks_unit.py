@@ -475,12 +475,10 @@ def test_evaluate_configurations(
     assert result["targets"]["configurations.akri.sh"]
     target = result["targets"]["configurations.akri.sh"]
 
-    for namespace in target:
-        assert namespace in result["targets"]["configurations.akri.sh"]
-
-        target[namespace]["conditions"] = [] if not target[namespace]["conditions"] else target[namespace]["conditions"]
-        assert_conditions(target[namespace], conditions)
-        assert_evaluations(target[namespace], evaluations)
+    if not target["conditions"]:
+        target["conditions"] = []
+    assert_conditions(target, conditions)
+    assert_evaluations(target, evaluations)
 
 
 @pytest.mark.parametrize("detail_level", ResourceOutputDetailLevel.list())
@@ -547,12 +545,10 @@ def test_evaluate_instances(
     assert result["targets"]["instances.akri.sh"]
     target = result["targets"]["instances.akri.sh"]
 
-    for namespace in target:
-        assert namespace in result["targets"]["instances.akri.sh"]
-
-        target[namespace]["conditions"] = [] if not target[namespace]["conditions"] else target[namespace]["conditions"]
-        assert_conditions(target[namespace], conditions)
-        assert_evaluations(target[namespace], evaluations)
+    if not target["conditions"]:
+        target["conditions"] = []
+    assert_conditions(target, conditions)
+    assert_evaluations(target, evaluations)
 
 
 @pytest.mark.parametrize("detail_level", ResourceOutputDetailLevel.list())
@@ -619,9 +615,7 @@ def test_evaluate_core_service_runtime(
     assert result["targets"][CoreServiceResourceKinds.RUNTIME_RESOURCE.value]
     target = result["targets"][CoreServiceResourceKinds.RUNTIME_RESOURCE.value]
 
-    for namespace in target:
-        assert namespace in result["targets"][CoreServiceResourceKinds.RUNTIME_RESOURCE.value]
-
-        target[namespace]["conditions"] = [] if not target[namespace]["conditions"] else target[namespace]["conditions"]
-        assert_conditions(target[namespace], namespace_conditions)
-        assert_evaluations(target[namespace], namespace_evaluations)
+    if not target["conditions"]:
+        target["conditions"] = []
+    assert_conditions(target, namespace_conditions)
+    assert_evaluations(target, namespace_evaluations)

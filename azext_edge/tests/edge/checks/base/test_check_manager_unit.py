@@ -168,5 +168,5 @@ def assert_check_manager_dict(
         for target in expected_target_displays:
             assert (
                 expected_target_displays[target]
-                == result_check_dict_displays["targets"][target][expected_namespace]["displays"]
+                == result_check_dict_displays["targets"][target]["displays"]
             )

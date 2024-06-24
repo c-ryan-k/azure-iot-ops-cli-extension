@@ -22,7 +22,6 @@ from azext_edge.edge.providers.check.mq import (
 )
 from azext_edge.edge.providers.edge_api.mq import MqResourceKinds
 from azext_edge.edge.providers.check.common import (
-    ALL_NAMESPACES_TARGET,
     KafkaTopicMapRouteType,
     ResourceOutputDetailLevel,
 )
@@ -176,8 +175,8 @@ def test_broker_checks(
 
     # all evalBroker assertions
     assert result["name"] == "evalBrokers"
-    assert namespace in result["targets"]["brokers.mq.iotoperations.azure.com"]
-    target = result["targets"]["brokers.mq.iotoperations.azure.com"][namespace]
+    assert result["targets"]["brokers.mq.iotoperations.azure.com"]
+    target = result["targets"]["brokers.mq.iotoperations.azure.com"]
 
     assert_conditions(target, conditions)
     assert_evaluations(target, evaluations)
@@ -299,8 +298,8 @@ def test_broker_listener_checks(
     result = evaluate_broker_listeners(detail_level=detail_level, resource_name=resource_name)
 
     assert result["name"] == "evalBrokerListeners"
-    assert namespace in result["targets"]["brokerlisteners.mq.iotoperations.azure.com"]
-    target = result["targets"]["brokerlisteners.mq.iotoperations.azure.com"][namespace]
+    assert result["targets"]["brokerlisteners.mq.iotoperations.azure.com"]
+    target = result["targets"]["brokerlisteners.mq.iotoperations.azure.com"]
 
     # conditions
     assert_conditions(target, conditions)
@@ -378,8 +377,8 @@ def test_diagnostic_service_checks(
     result = evaluate_diagnostics_service(detail_level=detail_level, resource_name=resource_name)
 
     assert result["name"] == "evalBrokerDiag"
-    assert namespace in result["targets"]["diagnosticservices.mq.iotoperations.azure.com"]
-    target = result["targets"]["diagnosticservices.mq.iotoperations.azure.com"][namespace]
+    assert result["targets"]["diagnosticservices.mq.iotoperations.azure.com"]
+    target = result["targets"]["diagnosticservices.mq.iotoperations.azure.com"]
 
     assert_conditions(target, conditions)
     assert_evaluations(target, evaluations)
@@ -496,8 +495,8 @@ def test_mqtt_checks(
     result = evaluate_mqtt_bridge_connectors(detail_level=detail_level, resource_name=resource_name)
 
     assert result["name"] == "evalmqttbridgeconnectors"
-    assert namespace in result["targets"]["mqttbridgeconnectors.mq.iotoperations.azure.com"]
-    target = result["targets"]["mqttbridgeconnectors.mq.iotoperations.azure.com"][namespace]
+    assert result["targets"]["mqttbridgeconnectors.mq.iotoperations.azure.com"]
+    target = result["targets"]["mqttbridgeconnectors.mq.iotoperations.azure.com"]
 
     assert_conditions(target, conditions)
     assert_evaluations(target, evaluations)
@@ -603,8 +602,8 @@ def test_datalake_checks(
     result = evaluate_datalake_connectors(detail_level=detail_level, resource_name=resource_name)
 
     assert result["name"] == "evaldatalakeconnectors"
-    assert namespace in result["targets"]["datalakeconnectors.mq.iotoperations.azure.com"]
-    target = result["targets"]["datalakeconnectors.mq.iotoperations.azure.com"][namespace]
+    assert result["targets"]["datalakeconnectors.mq.iotoperations.azure.com"]
+    target = result["targets"]["datalakeconnectors.mq.iotoperations.azure.com"]
 
     assert_conditions(target, conditions)
     assert_evaluations(target, evaluations)
@@ -741,8 +740,8 @@ def test_kafka_checks(
     result = evaluate_kafka_connectors(detail_level=detail_level, resource_name=resource_name)
 
     assert result["name"] == "evalkafkaconnectors"
-    assert namespace in result["targets"]["kafkaconnectors.mq.iotoperations.azure.com"]
-    target = result["targets"]["kafkaconnectors.mq.iotoperations.azure.com"][namespace]
+    assert result["targets"]["kafkaconnectors.mq.iotoperations.azure.com"]
+    target = result["targets"]["kafkaconnectors.mq.iotoperations.azure.com"]
 
     assert_conditions(target, conditions)
     assert_evaluations(target, evaluations)
@@ -778,13 +777,13 @@ def test_empty_connector_results(mocker, mock_evaluate_cloud_connector_pod_healt
     assert result["name"] == name
     assert all(
         [
-            result["targets"][target][ALL_NAMESPACES_TARGET],
-            not result["targets"][target][ALL_NAMESPACES_TARGET]["conditions"],
+            result["targets"][target],
+            not result["targets"][target]["conditions"],
             (
-                result["targets"][target][ALL_NAMESPACES_TARGET]["evaluations"][0]["status"]
+                result["targets"][target]["evaluations"][0]["status"]
                 == CheckTaskStatus.skipped.value,
             ),
-            result["targets"][target][ALL_NAMESPACES_TARGET]["status"] == CheckTaskStatus.skipped.value,
+            result["targets"][target]["status"] == CheckTaskStatus.skipped.value,
         ]
     )
 
