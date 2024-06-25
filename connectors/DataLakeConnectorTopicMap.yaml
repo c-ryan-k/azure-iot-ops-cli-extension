@@ -1,0 +1,37 @@
+apiVersion: mq.iotoperations.azure.com/v1beta1
+kind: DataLakeConnectorTopicMap
+metadata:
+  name: datalake-topicmap
+  namespace: azure-iot-operations
+spec:
+  dataLakeConnectorRef: "my-datalake-connector"
+  mapping:
+    allowedLatencySecs: 1
+    messagePayloadType: "json"
+    maxMessagesPerBatch: 10
+    clientId: id
+    mqttSourceTopic: "azure-iot-operations/data/opc-ua-connector-de/thermostat-de"
+    qos: 1
+    table:
+      tableName: thermostat
+      schema:
+      - name: externalAssetId
+        format: utf8
+        optional: false
+        mapping: $property.externalAssetId
+      - name: assetName
+        format: utf8
+        optional: false
+        mapping: DataSetWriterName
+      - name: CurrentTemperature
+        format: float32
+        optional: false
+        mapping: Payload.temperature.Value
+      - name: Pressure
+        format: float32
+        optional: true
+        mapping: "Payload.Tag 10.Value"
+      - name: Timestamp
+        format: timestamp
+        optional: false
+        mapping: $received_time
