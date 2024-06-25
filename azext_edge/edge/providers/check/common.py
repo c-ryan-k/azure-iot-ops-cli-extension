@@ -19,7 +19,7 @@ class ResourceOutputDetailLevel(ListableEnum):
     """
 
     summary = "0"  # summary
-    detail = "1"  # detail
+    default = "1"  # detail
     verbose = "2"  # verbose
 
 

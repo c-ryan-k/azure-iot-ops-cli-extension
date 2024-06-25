@@ -481,7 +481,7 @@ def evaluate_asset_endpoint_profiles(
                     padding=(0, 0, 0, transport_authentication_padding)
                 )
 
-                if detail_level > ResourceOutputDetailLevel.detail.value and transport_authentication_own_certificates:
+                if detail_level > ResourceOutputDetailLevel.default.value and transport_authentication_own_certificates:
                     process_list_resource(
                         check_manager=check_manager,
                         target_name=target_asset_endpoint_profiles,

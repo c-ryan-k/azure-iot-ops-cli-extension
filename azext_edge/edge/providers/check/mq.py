@@ -82,17 +82,23 @@ def evaluate_diagnostics_service(
     detail_level: int = ResourceOutputDetailLevel.summary.value,
     resource_name: str = None,
 ) -> Dict[str, Any]:
+    # create check manager
     check_manager = CheckManager(
         check_name="evalBrokerDiag",
         check_desc="Evaluate MQ Diagnostics Service",
     )
+
+    # get resources
     all_diagnostic_services = get_resources_by_name(
         api_info=MQ_ACTIVE_API,
         kind=MqResourceKinds.DIAGNOSTIC_SERVICE,
         resource_name=resource_name,
     )
+
+    # define target api
     target_diagnostic_service = "diagnosticservices.mq.iotoperations.azure.com"
 
+    # no diagnostic services in any namespace
     if not all_diagnostic_services:
         status = CheckTaskStatus.skipped.value if resource_name else CheckTaskStatus.error.value
         fetch_diagnostics_services_error = f"Unable to fetch {MqResourceKinds.DIAGNOSTIC_SERVICE.value}s in any namespace."
@@ -110,7 +116,10 @@ def evaluate_diagnostics_service(
         )
         return check_manager.as_dict(as_list)
 
+    # group by namespace
     for (namespace, diagnostic_services) in get_resources_grouped_by_namespace(all_diagnostic_services):
+
+        # per-namespace checks
         check_manager.add_target(
             target_name=target_diagnostic_service,
             namespace=namespace,
@@ -152,6 +161,7 @@ def evaluate_diagnostics_service(
             display=Padding(diagnostics_count_text, (0, 0, 0, 8)),
         )
 
+        # iterate through resources in namespace
         for diag_service_resource in diagnostic_services:
             diag_service_resource_name = diag_service_resource["metadata"]["name"]
             diag_service_resource_spec: dict = diag_service_resource["spec"]
@@ -164,7 +174,7 @@ def evaluate_diagnostics_service(
                     (0, 0, 0, 8),
                 ),
             )
-
+            # validate spec properties
             for (key, label, suffix) in [
                 ("dataExportFrequencySeconds", "Data Export Frequency", " seconds"),
                 ("logFormat", "Log Format", None),
@@ -174,6 +184,7 @@ def evaluate_diagnostics_service(
                 ("staleDataTimeoutSeconds", "Stale Data Timeout", " seconds"),
             ]:
                 val = diag_service_resource_spec.get(key)
+                # don't show these properties on summary
                 if detail_level != ResourceOutputDetailLevel.summary.value:
                     check_manager.add_display(
                         target_name=target_diagnostic_service,
@@ -190,6 +201,7 @@ def evaluate_diagnostics_service(
                 value={"spec": diag_service_resource_spec},
             )
 
+            # check for service deployed in namespace
             target_service_deployed = f"service/{AIO_MQ_DIAGNOSTICS_SERVICE}"
             check_manager.add_target(target_name=target_service_deployed, namespace=namespace, conditions=["spec.clusterIP", "spec.ports"])
             check_manager.add_display(
@@ -200,8 +212,9 @@ def evaluate_diagnostics_service(
                     (0, 0, 0, 8),
                 ),
             )
-
             diagnostics_service = get_namespaced_service(name=AIO_MQ_DIAGNOSTICS_SERVICE, namespace=namespace, as_dict=True)
+
+            # no service deployed in namespace
             if not diagnostics_service:
                 check_manager.add_target_eval(
                     target_name=target_service_deployed,
