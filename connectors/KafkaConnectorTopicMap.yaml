@@ -1,0 +1,34 @@
+apiVersion: mq.iotoperations.azure.com/v1beta1
+kind: KafkaConnectorTopicMap
+metadata:
+  name: my-eh-topic-map
+  namespace: azure-iot-operations
+spec:
+  kafkaConnectorRef: my-eh-connector
+  compression: snappy
+  batching:
+    enabled: true
+    latencyMs: 1000
+    maxMessages: 100
+    maxBytes: 1024
+  partitionStrategy: property
+  partitionKeyProperty: device-id
+  copyMqttProperties: true
+  routes:
+    # Subscribe from MQTT topic "temperature-alerts/#" and send to Kafka topic "receiving-event-hub"
+    - mqttToKafka:
+        name: "route1"
+        mqttTopic: temperature-alerts/#
+        kafkaTopic: receiving-event-hub
+        kafkaAcks: one
+        qos: 1
+        sharedSubscription:
+          groupName: group1
+          groupMinimumShareNumber: 3
+    # Pull from kafka topic "sending-event-hub" and publish to MQTT topic "heater-commands"
+    - kafkaToMqtt:
+        name: "route2"
+        consumerGroupId: mqConnector
+        kafkaTopic: sending-event-hub
+        mqttTopic: heater-commands
+        qos: 0
