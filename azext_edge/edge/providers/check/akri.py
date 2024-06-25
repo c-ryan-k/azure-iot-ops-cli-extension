@@ -617,32 +617,17 @@ def _evaluate_discovery_handler(
 
                         if detail_level >= ResourceOutputDetailLevel.detail.value:
                             key_ref_property_padding = key_ref_padding + PADDING_SIZE
-                            if key_ref_key:
-                                check_manager.add_display(
-                                    target_name=target_name,
-                                    namespace=namespace,
-                                    display=Padding(
-                                        f"Key: [cyan]{key_ref_key}[/cyan]",
-                                        (0, 0, 0, key_ref_property_padding),
-                                    ),
-                                )
-
-                            if key_ref_namespace:
-                                check_manager.add_display(
-                                    target_name=target_name,
-                                    namespace=namespace,
-                                    display=Padding(
-                                        f"Namespace: [cyan]{key_ref_namespace}[/cyan]",
-                                        (0, 0, 0, key_ref_property_padding),
-                                    ),
-                                )
-
-                            if key_ref_optional:
-                                check_manager.add_display(
-                                    target_name=target_name,
-                                    namespace=namespace,
-                                    display=Padding(
-                                        f"Optional: [cyan]{str(key_ref_optional)}[/cyan]",
-                                        (0, 0, 0, key_ref_property_padding),
-                                    ),
-                                )
+                            for (key, label) in [
+                                (key_ref_key, "Key"),
+                                (key_ref_namespace, "Namespace"),
+                                (key_ref_optional, "Optional"),
+                            ]:
+                                if key:
+                                    check_manager.add_display(
+                                        target_name=target_name,
+                                        namespace=namespace,
+                                        display=Padding(
+                                            f"{label}: [cyan]{key}[/cyan]",
+                                            (0, 0, 0, key_ref_property_padding),
+                                        ),
+                                    )
