@@ -117,6 +117,7 @@ def evaluate_configurations(
     resource_name: str = None,
 ) -> Dict[str, Any]:
     check_manager = CheckManager(check_name="evalConfigurations", check_desc="Evaluate Akri configurations")
+     
 
     target_configurations = generate_target_resource_name(api_info=AKRI_API_V0, resource_kind=AkriResourceKinds.CONFIGURATION.value)
     configuration_conditions = []
@@ -198,7 +199,7 @@ def evaluate_configurations(
                 padding=property_padding,
             )
 
-            if detail_level >= ResourceOutputDetailLevel.detail.value and capacity:
+            if detail_level >= ResourceOutputDetailLevel.default.value and capacity:
                 check_manager.add_display(
                     target_name=target_configurations,
                     namespace=namespace,
@@ -309,7 +310,7 @@ def evaluate_instances(
             )
 
             property_padding = instance_padding + PADDING_SIZE
-            if detail_level >= ResourceOutputDetailLevel.detail.value:
+            if detail_level >= ResourceOutputDetailLevel.default.value:
                 configuration_name = spec.get("configurationName", "")
                 if configuration_name:
                     check_manager.add_display(
@@ -432,7 +433,7 @@ def _evaluate_discovery_handler(
         discovery_details = discovery_handler.get("discoveryDetails", "")
         discovery_properties = discovery_handler.get("discoveryProperties", [])
 
-        if detail_level >= ResourceOutputDetailLevel.detail.value:
+        if detail_level >= ResourceOutputDetailLevel.default.value:
             check_manager.add_display(
                 target_name=target_name,
                 namespace=namespace,
@@ -535,7 +536,7 @@ def _evaluate_discovery_handler(
                 )
 
                 if value:
-                    if detail_level >= ResourceOutputDetailLevel.detail.value:
+                    if detail_level >= ResourceOutputDetailLevel.default.value:
                         check_manager.add_display(
                             target_name=target_name,
                             namespace=namespace,
@@ -615,7 +616,7 @@ def _evaluate_discovery_handler(
                             value=key_ref_name_eval_value
                         )
 
-                        if detail_level >= ResourceOutputDetailLevel.detail.value:
+                        if detail_level >= ResourceOutputDetailLevel.default.value:
                             key_ref_property_padding = key_ref_padding + PADDING_SIZE
                             for (key, label) in [
                                 (key_ref_key, "Key"),

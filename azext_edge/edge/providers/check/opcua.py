@@ -63,7 +63,7 @@ def check_opcua_deployment(
 
 def evaluate_core_service_runtime(
     as_list: bool = False,
-    detail_level: int = ResourceOutputDetailLevel.summary.value,
+    detail_level: int = ResourceOutputDetailLevel.default.value,
     resource_name: str = None,
 ) -> Dict[str, Any]:
     check_manager = CheckManager(check_name="evalCoreServiceRuntime", check_desc="Evaluate OPC UA broker core service")
@@ -87,18 +87,26 @@ def evaluate_core_service_runtime(
 
         if not opcua_runtime_resources:
             check_manager.add_target(target_name=CoreServiceResourceKinds.RUNTIME_RESOURCE.value)
-            check_manager.add_display(target_name=CoreServiceResourceKinds.RUNTIME_RESOURCE.value, display=Padding("Unable to fetch pods.", (0, 0, 0, padding + 2)))
+            if detail_level == ResourceOutputDetailLevel.summary.value:
+                # TODO - summary plumbing
+                pass
+            else:
+                check_manager.add_display(target_name=CoreServiceResourceKinds.RUNTIME_RESOURCE.value, display=Padding("Unable to fetch pods.", (0, 0, 0, padding + 2)))
 
     for (namespace, pods) in get_resources_grouped_by_namespace(opcua_runtime_resources):
         check_manager.add_target(target_name=CoreServiceResourceKinds.RUNTIME_RESOURCE.value, namespace=namespace)
-        check_manager.add_display(
-            target_name=CoreServiceResourceKinds.RUNTIME_RESOURCE.value,
-            namespace=namespace,
-            display=Padding(
-                f"OPC UA broker runtime resources in namespace {{[purple]{namespace}[/purple]}}",
-                (0, 0, 0, padding)
+        if detail_level == ResourceOutputDetailLevel.summary.value:
+            # TODO - summary plumbing
+            pass
+        else:
+            check_manager.add_display(
+                target_name=CoreServiceResourceKinds.RUNTIME_RESOURCE.value,
+                namespace=namespace,
+                display=Padding(
+                    f"OPC UA broker runtime resources in namespace {{[purple]{namespace}[/purple]}}",
+                    (0, 0, 0, padding)
+                )
             )
-        )
 
         process_pod_status(
             check_manager=check_manager,
@@ -115,7 +123,7 @@ def evaluate_core_service_runtime(
 
 def evaluate_asset_types(
     as_list: bool = False,
-    detail_level: int = ResourceOutputDetailLevel.summary.value,
+    detail_level: int = ResourceOutputDetailLevel.default.value,
     resource_name: str = None,
 ) -> Dict[str, Any]:
     check_manager = CheckManager(check_name="evalAssetTypes", check_desc="Evaluate OPC UA broker asset types")
@@ -136,7 +144,11 @@ def evaluate_asset_types(
             status=CheckTaskStatus.skipped.value,
             value={"asset_types": fetch_asset_types_error_text}
         )
-        check_manager.add_display(target_name=target_asset_types, display=Padding(fetch_asset_types_error_text, (0, 0, 0, 8)))
+        if detail_level == ResourceOutputDetailLevel.summary.value:
+            # TODO - summary plumbing
+            pass
+        else:
+            check_manager.add_display(target_name=target_asset_types, display=Padding(fetch_asset_types_error_text, (0, 0, 0, 8)))
 
     for (namespace, asset_types) in get_resources_grouped_by_namespace(all_asset_types):
         check_manager.add_target(
@@ -144,15 +156,6 @@ def evaluate_asset_types(
             namespace=namespace,
             conditions=asset_type_conditions
         )
-        check_manager.add_display(
-            target_name=target_asset_types,
-            namespace=namespace,
-            display=Padding(
-                f"OPC UA broker asset types in namespace {{[purple]{namespace}[/purple]}}",
-                (0, 0, 0, 8)
-            )
-        )
-
         asset_types: List[dict] = list(asset_types)
         asset_types_count = len(asset_types)
         asset_types_count_text = "- Expecting [bright_blue]>=1[/bright_blue] asset type resource per namespace. {}."
@@ -163,30 +166,46 @@ def evaluate_asset_types(
         else:
             asset_types_count_text = asset_types_count_text.format(f"[red]Detected {asset_types_count}[/red]")
             check_manager.set_target_status(target_name=all_asset_types, status=CheckTaskStatus.error.value)
-        check_manager.add_display(
-            target_name=target_asset_types,
-            namespace=namespace,
-            display=Padding(asset_types_count_text, (0, 0, 0, padding))
-        )
-
-        for asset_type in asset_types:
-            asset_type_name = asset_type["metadata"]["name"]
-
-            asset_type_text = (
-                f"- Asset type {{[bright_blue]{asset_type_name}[/bright_blue]}} detected."
+        if detail_level == ResourceOutputDetailLevel.summary.value:
+            # TODO - summary plumbing
+            pass
+        else:
+            check_manager.add_display(
+                target_name=target_asset_types,
+                namespace=namespace,
+                display=Padding(
+                    f"OPC UA broker asset types in namespace {{[purple]{namespace}[/purple]}}",
+                    (0, 0, 0, 8)
+                )
             )
-            asset_type_padding = padding + PADDING_SIZE
 
             check_manager.add_display(
                 target_name=target_asset_types,
                 namespace=namespace,
-                display=Padding(asset_type_text, (0, 0, 0, asset_type_padding))
+                display=Padding(asset_types_count_text, (0, 0, 0, padding))
             )
 
-            spec = asset_type["spec"]
-            property_padding = asset_type_padding + PADDING_SIZE
+        for asset_type in asset_types:
+            if detail_level == ResourceOutputDetailLevel.summary.value:
+                # TODO - summary plumbing
+                pass
+            else:
+                asset_type_name = asset_type["metadata"]["name"]
 
-            if detail_level >= ResourceOutputDetailLevel.detail.value:
+                asset_type_text = (
+                    f"- Asset type {{[bright_blue]{asset_type_name}[/bright_blue]}} detected."
+                )
+                asset_type_padding = padding + PADDING_SIZE
+
+                check_manager.add_display(
+                    target_name=target_asset_types,
+                    namespace=namespace,
+                    display=Padding(asset_type_text, (0, 0, 0, asset_type_padding))
+                )
+
+                spec = asset_type["spec"]
+                property_padding = asset_type_padding + PADDING_SIZE
+
                 # label summarize
                 labels = spec["labels"]
 
@@ -221,7 +240,7 @@ def evaluate_asset_types(
                     schema=schema,
                     padding=property_padding,
                     detail_level=detail_level
-                )
+            )
 
     return check_manager.as_dict(as_list)
 
@@ -235,7 +254,7 @@ def _process_schema(
         detail_level: int = ResourceOutputDetailLevel.summary.value
 ) -> None:
 
-    if detail_level == ResourceOutputDetailLevel.detail.value:
+    if detail_level == ResourceOutputDetailLevel.default.value:
         # convert JSON string to dict
         import json
 
