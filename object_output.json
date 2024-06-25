@@ -1,0 +1,821 @@
+{
+  "postDeployment": [
+    {
+      "description": "Enumerate Akri API resources",
+      "name": "enumerateAkriApi",
+      "status": "success",
+      "targets": {
+        "akri.sh/v0": {
+          "conditions": null,
+          "evaluations": [
+            {
+              "status": "success",
+              "value": [
+                "Instance",
+                "Configuration"
+              ]
+            }
+          ],
+          "status": "success"
+        }
+      }
+    },
+    {
+      "description": "Evaluate Akri core service",
+      "name": "evalCoreServiceRuntime",
+      "status": "success",
+      "targets": {
+        "coreServiceRuntimeResource": {
+          "conditions": null,
+          "evaluations": [
+            {
+              "name": "pod/aio-akri-agent-daemonset-r6cdr",
+              "status": "success",
+              "value": {
+                "name": "aio-akri-agent-daemonset-r6cdr",
+                "status.phase": "Running"
+              }
+            },
+            {
+              "name": "pod/aio-akri-otel-collector-6bb9f7fd95-9w7fk",
+              "status": "success",
+              "value": {
+                "name": "aio-akri-otel-collector-6bb9f7fd95-9w7fk",
+                "status.phase": "Running"
+              }
+            }
+          ],
+          "status": "success"
+        }
+      }
+    },
+    {
+      "description": "Evaluate Akri configurations",
+      "name": "evalConfigurations",
+      "status": "success",
+      "targets": {
+        "configurations.akri.sh": {
+          "conditions": [],
+          "evaluations": [],
+          "status": "success"
+        }
+      }
+    },
+    {
+      "description": "Evaluate Akri instances",
+      "name": "evalInstances",
+      "status": "skipped",
+      "targets": {
+        "instances.akri.sh": {
+          "conditions": [],
+          "evaluations": [
+            {
+              "status": "skipped",
+              "value": {
+                "instances": "Unable to fetch Akri instances in any namespaces."
+              }
+            }
+          ],
+          "status": "skipped"
+        }
+      }
+    },
+    {
+      "description": "Enumerate MQ API resources",
+      "name": "enumerateMqApi",
+      "status": "success",
+      "targets": {
+        "mq.iotoperations.azure.com/v1beta1": {
+          "conditions": null,
+          "evaluations": [
+            {
+              "status": "success",
+              "value": [
+                "IoTHubConnector",
+                "BrokerAuthorization",
+                "IoTHubConnectorRoutesMap",
+                "BrokerAuthentication",
+                "KafkaConnectorTopicMap",
+                "MqttBridgeConnector",
+                "KafkaConnector",
+                "DiagnosticService",
+                "DataLakeConnectorTopicMap",
+                "MqttBridgeTopicMap",
+                "DataLakeConnector",
+                "BrokerListener",
+                "Broker"
+              ]
+            }
+          ],
+          "status": "success"
+        }
+      }
+    },
+    {
+      "description": "Evaluate MQ brokers",
+      "name": "evalBrokers",
+      "status": "success",
+      "targets": {
+        "brokers.mq.iotoperations.azure.com": {
+          "conditions": [
+            "len(brokers)==1",
+            "status",
+            "spec.mode",
+            "spec.cardinality",
+            "spec.cardinality.backendChain.partitions>=1",
+            "spec.cardinality.backendChain.redundancyFactor>=1",
+            "spec.cardinality.backendChain.workers>=1",
+            "spec.cardinality.frontend.replicas>=1",
+            "pod/aio-mq-diagnostics-probe.status.phase",
+            "pod/aio-mq-dmqtt-frontend.status.phase",
+            "pod/aio-mq-dmqtt-backend.status.phase",
+            "pod/aio-mq-dmqtt-authentication.status.phase",
+            "pod/aio-mq-dmqtt-health-manager.status.phase"
+          ],
+          "evaluations": [
+            {
+              "name": "broker",
+              "status": "success",
+              "value": {
+                "spec.cardinality": {
+                  "backendChain": {
+                    "partitions": 2,
+                    "redundancyFactor": 2,
+                    "workers": 2
+                  },
+                  "frontend": {
+                    "replicas": 2,
+                    "workers": 2
+                  }
+                },
+                "spec.mode": "distributed",
+                "status": {
+                  "status": "Running",
+                  "statusDescription": "All back and frontend replicas are running"
+                }
+              }
+            },
+            {
+              "name": "pod/aio-mq-diagnostics-probe-0",
+              "status": "success",
+              "value": {
+                "name": "aio-mq-diagnostics-probe-0",
+                "status.phase": "Running"
+              }
+            },
+            {
+              "name": "pod/aio-mq-dmqtt-frontend-0",
+              "status": "success",
+              "value": {
+                "name": "aio-mq-dmqtt-frontend-0",
+                "status.phase": "Running"
+              }
+            },
+            {
+              "name": "pod/aio-mq-dmqtt-frontend-1",
+              "status": "success",
+              "value": {
+                "name": "aio-mq-dmqtt-frontend-1",
+                "status.phase": "Running"
+              }
+            },
+            {
+              "name": "pod/aio-mq-dmqtt-backend-1-1",
+              "status": "success",
+              "value": {
+                "name": "aio-mq-dmqtt-backend-1-1",
+                "status.phase": "Running"
+              }
+            },
+            {
+              "name": "pod/aio-mq-dmqtt-backend-1-0",
+              "status": "success",
+              "value": {
+                "name": "aio-mq-dmqtt-backend-1-0",
+                "status.phase": "Running"
+              }
+            },
+            {
+              "name": "pod/aio-mq-dmqtt-backend-2-0",
+              "status": "success",
+              "value": {
+                "name": "aio-mq-dmqtt-backend-2-0",
+                "status.phase": "Running"
+              }
+            },
+            {
+              "name": "pod/aio-mq-dmqtt-backend-2-1",
+              "status": "success",
+              "value": {
+                "name": "aio-mq-dmqtt-backend-2-1",
+                "status.phase": "Running"
+              }
+            },
+            {
+              "name": "pod/aio-mq-dmqtt-authentication-0",
+              "status": "success",
+              "value": {
+                "name": "aio-mq-dmqtt-authentication-0",
+                "status.phase": "Running"
+              }
+            },
+            {
+              "name": "pod/aio-mq-dmqtt-health-manager-0",
+              "status": "success",
+              "value": {
+                "name": "aio-mq-dmqtt-health-manager-0",
+                "status.phase": "Running"
+              }
+            }
+          ],
+          "status": "success"
+        }
+      }
+    },
+    {
+      "description": "Evaluate MQ broker listeners",
+      "name": "evalBrokerListeners",
+      "status": "success",
+      "targets": {
+        "brokerlisteners.mq.iotoperations.azure.com": {
+          "conditions": [
+            "len(brokerlisteners)>=1",
+            "spec",
+            "valid(spec.brokerRef)",
+            "spec.serviceName",
+            "status"
+          ],
+          "evaluations": [
+            {
+              "name": "listener",
+              "status": "success",
+              "value": {
+                "spec": {
+                  "authenticationEnabled": true,
+                  "authorizationEnabled": false,
+                  "brokerRef": "broker",
+                  "port": 8883,
+                  "protocol": "mqtt",
+                  "serviceName": "aio-mq-dmqtt-frontend",
+                  "serviceType": "clusterIp",
+                  "tls": {
+                    "automatic": {
+                      "issuerRef": {
+                        "group": "cert-manager.io",
+                        "kind": "Issuer",
+                        "name": "mq-dmqtt-frontend"
+                      }
+                    }
+                  }
+                },
+                "valid(spec.brokerRef)": true
+              }
+            }
+          ],
+          "status": "success"
+        },
+        "service/aio-mq-dmqtt-frontend": {
+          "conditions": null,
+          "evaluations": [],
+          "status": "success"
+        }
+      }
+    },
+    {
+      "description": "Evaluate MQ Diagnostics Service",
+      "name": "evalBrokerDiag",
+      "status": "success",
+      "targets": {
+        "diagnosticservices.mq.iotoperations.azure.com": {
+          "conditions": [
+            "len(diagnosticservices)==1",
+            "spec"
+          ],
+          "evaluations": [
+            {
+              "status": "success",
+              "value": 1
+            },
+            {
+              "status": "success",
+              "value": {
+                "spec": {
+                  "dataExportFrequencySeconds": 10,
+                  "enableTls": true,
+                  "image": {
+                    "repository": "mcr.microsoft.com/azureiotoperations/diagnostics-service",
+                    "tag": "0.4.0-preview"
+                  },
+                  "logFormat": "text",
+                  "logLevel": "info",
+                  "maxDataStorageSize": 16,
+                  "metricsPort": 9600,
+                  "staleDataTimeoutSeconds": 600
+                }
+              }
+            }
+          ],
+          "status": "success"
+        },
+        "service/aio-mq-diagnostics-service": {
+          "conditions": [
+            "spec.clusterIP",
+            "spec.ports",
+            "pod/aio-mq-diagnostics-service.status.phase"
+          ],
+          "evaluations": [
+            {
+              "name": "aio-mq-diagnostics-service",
+              "status": "success",
+              "value": {
+                "spec": {
+                  "clusterIP": "10.43.27.31",
+                  "ports": [
+                    {
+                      "name": "bincode-listener-service",
+                      "port": 9700,
+                      "protocol": "TCP",
+                      "targetPort": 9700
+                    },
+                    {
+                      "name": "protobuf-listener-service",
+                      "port": 9800,
+                      "protocol": "TCP",
+                      "targetPort": 9800
+                    },
+                    {
+                      "name": "aio-mq-metrics-service",
+                      "port": 9600,
+                      "protocol": "TCP",
+                      "targetPort": 9600
+                    }
+                  ]
+                }
+              }
+            },
+            {
+              "name": "pod/aio-mq-diagnostics-service-859d474949-nj65d",
+              "status": "success",
+              "value": {
+                "name": "aio-mq-diagnostics-service-859d474949-nj65d",
+                "status.phase": "Running"
+              }
+            }
+          ],
+          "status": "success"
+        }
+      }
+    },
+    {
+      "description": "Evaluate MQTT Bridge Connectors",
+      "name": "evalmqttbridgeconnectors",
+      "status": "skipped",
+      "targets": {
+        "mqttbridgeconnectors.mq.iotoperations.azure.com": {
+          "conditions": null,
+          "evaluations": [
+            {
+              "status": "skipped",
+              "value": "No MQTT Bridge Connector resources detected"
+            }
+          ],
+          "status": "skipped"
+        }
+      }
+    },
+    {
+      "description": "Evaluate Data Lake Connectors",
+      "name": "evaldatalakeconnectors",
+      "status": "skipped",
+      "targets": {
+        "datalakeconnectors.mq.iotoperations.azure.com": {
+          "conditions": null,
+          "evaluations": [
+            {
+              "status": "skipped",
+              "value": "No Data Lake Connector resources detected"
+            }
+          ],
+          "status": "skipped"
+        }
+      }
+    },
+    {
+      "description": "Evaluate Kafka Connectors",
+      "name": "evalkafkaconnectors",
+      "status": "skipped",
+      "targets": {
+        "kafkaconnectors.mq.iotoperations.azure.com": {
+          "conditions": null,
+          "evaluations": [
+            {
+              "status": "skipped",
+              "value": "No Kafka Connector resources detected"
+            }
+          ],
+          "status": "skipped"
+        }
+      }
+    },
+    {
+      "description": "Enumerate Data Processor API resources",
+      "name": "enumerateDataProcessorApi",
+      "status": "skipped",
+      "targets": {
+        "dataprocessor.iotoperations.azure.com/v1": {
+          "conditions": null,
+          "evaluations": [
+            {
+              "status": "skipped"
+            }
+          ],
+          "status": "skipped"
+        }
+      }
+    },
+    {
+      "description": "Enumerate Device Registry API resources",
+      "name": "enumerateDeviceRegistryApi",
+      "status": "success",
+      "targets": {
+        "deviceregistry.microsoft.com/v1beta1": {
+          "conditions": null,
+          "evaluations": [
+            {
+              "status": "success",
+              "value": [
+                "AssetEndpointProfile",
+                "Asset"
+              ]
+            }
+          ],
+          "status": "success"
+        }
+      }
+    },
+    {
+      "description": "Evaluate Device Registry instances",
+      "name": "evalAssets",
+      "status": "success",
+      "targets": {
+        "assets.deviceregistry.microsoft.com": {
+          "conditions": [
+            "spec.assetEndpointProfileUri",
+            "len(spec.dataPoints)",
+            "spec.dataPoints.[0].dataSource",
+            "len(spec.dataPoints)",
+            "spec.dataPoints.[0].dataSource",
+            "len(spec.dataPoints)",
+            "spec.dataPoints.[0].dataSource",
+            "spec.dataPoints.[1].dataSource"
+          ],
+          "evaluations": [
+            {
+              "name": "test-asset-9s71",
+              "status": "success",
+              "value": {
+                "spec.assetEndpointProfileUri": "test-endpoint-sot5"
+              }
+            },
+            {
+              "name": "test-asset-9s71",
+              "status": "success",
+              "value": {
+                "len(spec.dataPoints)": 1
+              }
+            },
+            {
+              "name": "test-asset-9s71",
+              "status": "success",
+              "value": {
+                "spec.dataPoints.[0].dataSource": "M2dtjxWUMCfvVyMjdznyosHbQmOMX3Ev7PhM"
+              }
+            },
+            {
+              "name": "test-asset-dz6f",
+              "status": "success",
+              "value": {
+                "spec.assetEndpointProfileUri": "test-endpoint-wyes"
+              }
+            },
+            {
+              "name": "test-asset-dz6f",
+              "status": "success",
+              "value": {
+                "len(spec.dataPoints)": 1
+              }
+            },
+            {
+              "name": "test-asset-dz6f",
+              "status": "success",
+              "value": {
+                "spec.dataPoints.[0].dataSource": "i611UnFngZXm3awpT6nLKvwoNBMoiURkAsfp"
+              }
+            },
+            {
+              "name": "test-asset-ojib",
+              "status": "success",
+              "value": {
+                "spec.assetEndpointProfileUri": "test-endpoint-yhmk"
+              }
+            },
+            {
+              "name": "test-asset-ojib",
+              "status": "success",
+              "value": {
+                "len(spec.dataPoints)": 2
+              }
+            },
+            {
+              "name": "test-asset-ojib",
+              "status": "success",
+              "value": {
+                "spec.dataPoints.[0].dataSource": "1IBb6ABjcQfJEo83zGXRDvHWsbDVlOsTa79u"
+              }
+            },
+            {
+              "name": "test-asset-ojib",
+              "status": "success",
+              "value": {
+                "spec.dataPoints.[1].dataSource": "qiV7IhNXh8pJXqe8isqgFnGMvxhAwQrXUMGW"
+              }
+            }
+          ],
+          "status": "success"
+        }
+      }
+    },
+    {
+      "description": "Evaluate Asset Endpoint Profiles",
+      "name": "evalAssetEndpointProfiles",
+      "status": "success",
+      "targets": {
+        "assetendpointprofiles.deviceregistry.microsoft.com": {
+          "conditions": [
+            "spec.uuid",
+            "spec.transportAuthentication.ownCertificates",
+            "spec.userAuthentication.mode",
+            "spec.transportAuthentication.ownCertificates",
+            "spec.userAuthentication.mode",
+            "spec.transportAuthentication.ownCertificates",
+            "spec.userAuthentication.mode"
+          ],
+          "evaluations": [
+            {
+              "name": "test-endpoint-sot5",
+              "status": "success",
+              "value": {
+                "spec.uuid": "a431fe43-c6e3-436e-ae88-d7f63afd9b49"
+              }
+            },
+            {
+              "name": "test-endpoint-sot5",
+              "status": "success",
+              "value": {
+                "spec.transportAuthentication.ownCertificates": []
+              }
+            },
+            {
+              "name": "test-endpoint-sot5",
+              "status": "success",
+              "value": {
+                "spec.userAuthentication.mode": "Anonymous"
+              }
+            },
+            {
+              "name": "test-endpoint-wyes",
+              "status": "success",
+              "value": {
+                "spec.uuid": "4d6fa309-adb0-4974-9f0e-e91c17f72244"
+              }
+            },
+            {
+              "name": "test-endpoint-wyes",
+              "status": "success",
+              "value": {
+                "spec.transportAuthentication.ownCertificates": []
+              }
+            },
+            {
+              "name": "test-endpoint-wyes",
+              "status": "success",
+              "value": {
+                "spec.userAuthentication.mode": "Anonymous"
+              }
+            },
+            {
+              "name": "test-endpoint-yhmk",
+              "status": "success",
+              "value": {
+                "spec.uuid": "efe5f728-b3df-4626-865b-8d1b496f707a"
+              }
+            },
+            {
+              "name": "test-endpoint-yhmk",
+              "status": "success",
+              "value": {
+                "spec.transportAuthentication.ownCertificates": []
+              }
+            },
+            {
+              "name": "test-endpoint-yhmk",
+              "status": "success",
+              "value": {
+                "spec.userAuthentication.mode": "Anonymous"
+              }
+            }
+          ],
+          "status": "success"
+        }
+      }
+    },
+    {
+      "description": "Enumerate LNM API resources",
+      "name": "enumerateLnmApi",
+      "status": "success",
+      "targets": {
+        "layerednetworkmgmt.iotoperations.azure.com/v1beta1": {
+          "conditions": null,
+          "evaluations": [
+            {
+              "status": "success",
+              "value": [
+                "Lnm"
+              ]
+            }
+          ],
+          "status": "success"
+        }
+      }
+    },
+    {
+      "description": "Evaluate LNM core service",
+      "name": "evalCoreServiceRuntime",
+      "status": "success",
+      "targets": {
+        "coreServiceRuntimeResource": {
+          "conditions": [
+            "pod/aio-lnm-operator-775b5f5f79-dvhtm.status.phase",
+            "pod/aio-lnm-operator-775b5f5f79-dvhtm.status.conditions.ready",
+            "pod/aio-lnm-operator-775b5f5f79-dvhtm.status.conditions.initialized",
+            "pod/aio-lnm-operator-775b5f5f79-dvhtm.status.conditions.containersready",
+            "pod/aio-lnm-operator-775b5f5f79-dvhtm.status.conditions.podscheduled",
+            "pod/aio-lnm-operator-775b5f5f79-dvhtm.status.conditions.podreadytostartcontainers"
+          ],
+          "evaluations": [
+            {
+              "name": "pod/aio-lnm-operator-775b5f5f79-dvhtm",
+              "status": "success",
+              "value": {
+                "name": "aio-lnm-operator-775b5f5f79-dvhtm",
+                "status.phase": "Running"
+              }
+            },
+            {
+              "name": "pod/aio-lnm-operator-775b5f5f79-dvhtm",
+              "status": "success",
+              "value": {
+                "name": "aio-lnm-operator-775b5f5f79-dvhtm",
+                "status.conditions.initialized": true
+              }
+            },
+            {
+              "name": "pod/aio-lnm-operator-775b5f5f79-dvhtm",
+              "status": "success",
+              "value": {
+                "name": "aio-lnm-operator-775b5f5f79-dvhtm",
+                "status.conditions.ready": true
+              }
+            },
+            {
+              "name": "pod/aio-lnm-operator-775b5f5f79-dvhtm",
+              "status": "success",
+              "value": {
+                "name": "aio-lnm-operator-775b5f5f79-dvhtm",
+                "status.conditions.containersready": true
+              }
+            },
+            {
+              "name": "pod/aio-lnm-operator-775b5f5f79-dvhtm",
+              "status": "success",
+              "value": {
+                "name": "aio-lnm-operator-775b5f5f79-dvhtm",
+                "status.conditions.podscheduled": true
+              }
+            }
+          ],
+          "status": "success"
+        }
+      }
+    },
+    {
+      "description": "Evaluate LNM instances",
+      "name": "evalLnms",
+      "status": "skipped",
+      "targets": {
+        "lnmz.layerednetworkmgmt.iotoperations.azure.com": {
+          "conditions": null,
+          "evaluations": [
+            {
+              "status": "skipped",
+              "value": "Unable to fetch LNM instances in any namespaces."
+            }
+          ],
+          "status": "skipped"
+        }
+      }
+    },
+    {
+      "description": "Enumerate OPC UA broker API resources",
+      "name": "enumerateOpcUaBrokerApi",
+      "status": "success",
+      "targets": {
+        "opcuabroker.iotoperations.azure.com/v1beta1": {
+          "conditions": null,
+          "evaluations": [
+            {
+              "status": "success",
+              "value": [
+                "AssetType"
+              ]
+            }
+          ],
+          "status": "success"
+        }
+      }
+    },
+    {
+      "description": "Evaluate OPC UA broker core service",
+      "name": "evalCoreServiceRuntime",
+      "status": "warning",
+      "targets": {
+        "coreServiceRuntimeResource": {
+          "conditions": null,
+          "evaluations": [
+            {
+              "name": "pod/aio-opc-asset-discovery-j9hm4",
+              "status": "success",
+              "value": {
+                "name": "aio-opc-asset-discovery-j9hm4",
+                "status.phase": "Running"
+              }
+            },
+            {
+              "name": "pod/aio-opc-admission-controller-6c7dbfff9c-ss5rd",
+              "status": "success",
+              "value": {
+                "name": "aio-opc-admission-controller-6c7dbfff9c-ss5rd",
+                "status.phase": "Running"
+              }
+            },
+            {
+              "name": "pod/aio-opc-supervisor-6859f59d5f-7zw2w",
+              "status": "success",
+              "value": {
+                "name": "aio-opc-supervisor-6859f59d5f-7zw2w",
+                "status.phase": "Running"
+              }
+            },
+            {
+              "name": "pod/aio-opc-opc.tcp-1-54df799d56-g4s64",
+              "status": "warning",
+              "value": {
+                "name": "aio-opc-opc.tcp-1-54df799d56-g4s64",
+                "status.phase": "Pending"
+              }
+            },
+            {
+              "name": "pod/aio-opc-opc.tcp-1-54df799d56-rpph8",
+              "status": "warning",
+              "value": {
+                "name": "aio-opc-opc.tcp-1-54df799d56-rpph8",
+                "status.phase": "Pending"
+              }
+            }
+          ],
+          "status": "warning"
+        }
+      }
+    },
+    {
+      "description": "Evaluate OPC UA broker asset types",
+      "name": "evalAssetTypes",
+      "status": "skipped",
+      "targets": {
+        "assettypes.opcuabroker.iotoperations.azure.com": {
+          "conditions": null,
+          "evaluations": [
+            {
+              "status": "skipped",
+              "value": {
+                "asset_types": "Unable to fetch OPC UA broker asset types in any namespaces."
+              }
+            }
+          ],
+          "status": "skipped"
+        }
+      }
+    }
+  ],
+  "title": "Evaluation for {[bright_blue]IoT Operations[/bright_blue]} service deployment"
+}
