@@ -7,7 +7,7 @@
 from knack.log import get_logger
 from rich.padding import Padding
 from kubernetes.client.models import V1Pod
-from typing import List, Tuple
+from typing import List, Optional, Tuple
 
 from .check_manager import CheckManager
 from .display import add_display_and_eval
@@ -54,8 +54,10 @@ def process_pods_status(
     target_service_pod: str,
     pods: List[dict],
     display_padding: int,
+    detail_level: Optional[int] = ResourceOutputDetailLevel.default.value,
 ) -> None:
     if not pods:
+        # TODO - summary plumbing
         add_display_and_eval(
             check_manager=check_manager,
             target_name=target,
@@ -74,6 +76,7 @@ def process_pods_status(
             pod_phase = pod_dict.get("status", {}).get("phase")
             pod_phase_deco, status = decorate_pod_phase(pod_phase)
             target_service_pod = f"pod/{pod_name}"
+            # TODO - summary plumbing
 
             add_display_and_eval(
                 check_manager=check_manager,
@@ -96,7 +99,7 @@ def evaluate_detailed_pod_health(
     namespace: str,
     detail_level: int = ResourceOutputDetailLevel.summary.value,
 ) -> None:
-
+    # TODO - summary plumbing
     def _decorate_pod_condition(condition: bool) -> Tuple[str, str]:
         if condition:
             return f"[green]{condition}[/green]", CheckTaskStatus.success.value

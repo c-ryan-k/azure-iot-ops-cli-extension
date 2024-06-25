@@ -40,15 +40,6 @@ def process_cloud_connector(
     as_list: bool = False,
     connector_resource_name: str = None,
 ):
-    # Create check manager
-    check_manager = CheckManager(
-        check_name=f"eval{connector_resource_kind.value}s",
-        check_desc=f"Evaluate {connector_display_name}s",
-    )
-
-    connector_padding = (0, 0, 0, 8)
-    topic_map_padding = (0, 0, 0, 12)
-
     all_connectors = MQ_ACTIVE_API.get_resources(kind=connector_resource_kind).get(
         "items", []
     )
@@ -64,27 +55,37 @@ def process_cloud_connector(
             all_topic_maps=all_topic_maps,
         )
 
-    # if we have no connectors of this type, mark as skipped
+    # if we have no connectors of this type, we're not showing anything
     if not all_connectors:
-        _mark_connector_target_as_skipped(
-            check_manager=check_manager,
-            target=connector_target,
-            message=f"No {connector_display_name} resources detected",
-            padding=connector_padding,
-        )
-        if detail_level != ResourceOutputDetailLevel.summary.value and not connector_resource_name:
-            for topic_maps, namespace in get_resources_grouped_by_namespace(
-                all_topic_maps
-            ):
-                _display_invalid_topic_maps(
-                    check_manager=check_manager,
-                    target=connector_target,
-                    namespace=namespace,
-                    topic_maps=topic_maps,
-                    ref_key=topic_map_reference_key,
-                    padding=connector_padding,
-                )
+        return
+        # _mark_connector_target_as_skipped(
+        #     check_manager=check_manager,
+        #     target=connector_target,
+        #     message=f"No {connector_display_name} resources detected",
+        #     padding=connector_padding,
+        # )
+        # if detail_level != ResourceOutputDetailLevel.summary.value and not connector_resource_name:
+        #     for topic_maps, namespace in get_resources_grouped_by_namespace(
+        #         all_topic_maps
+        #     ):
+        #         _display_invalid_topic_maps(
+        #             check_manager=check_manager,
+        #             target=connector_target,
+        #             namespace=namespace,
+        #             topic_maps=topic_maps,
+        #             ref_key=topic_map_reference_key,
+        #             padding=connector_padding,
+        #         )
 
+    # Create check manager
+    check_manager = CheckManager(
+        check_name=f"eval{connector_resource_kind.value}s",
+        check_desc=f"Evaluate {connector_display_name}s",
+    )
+
+    connector_padding = (0, 0, 0, 8)
+    topic_map_padding = (0, 0, 0, 12)
+    
     # track displayed topic maps
     processed_maps = []
     for namespace, connectors in get_resources_grouped_by_namespace(all_connectors):
