@@ -84,8 +84,8 @@ def load_iotops_help():
         type: command
         short-summary: Evaluate cluster-side runtime health of deployed IoT Operations services.
         long-summary: |
-            The command by default shows a human friendly _summary_ view of the selected service.
-            More detail can be requested via `--detail-level`.
+            The command by default shows a high-level, human friendly _summary_ view of all services.
+            More detail can be requested by specifying an individual service with `--svc` or adjusting the `--detail-level`.
 
             {{Supported service APIs}}
             - {COMPAT_AKRI_APIS.as_str()}

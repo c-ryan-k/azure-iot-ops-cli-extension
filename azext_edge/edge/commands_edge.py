@@ -52,7 +52,7 @@ def support_bundle(
 
 def check(
     cmd,
-    detail_level: int = ResourceOutputDetailLevel.summary.value,
+    detail_level: Optional[int] = None,
     pre_deployment_checks: Optional[bool] = None,
     post_deployment_checks: Optional[bool] = None,
     as_object=None,
@@ -67,6 +67,14 @@ def check(
     # by default - run prechecks if AIO is not deployed
     run_pre = not ORC_API_V1.is_deployed() if pre_deployment_checks is None else pre_deployment_checks
     run_post = True if post_deployment_checks is None else post_deployment_checks
+
+    if not detail_level:
+        # use the summary view if no service specified, otherwise default
+        detail_level = (
+            ResourceOutputDetailLevel.summary.value
+            if not ops_service
+            else ResourceOutputDetailLevel.default.value
+        )
 
     # only one of pre or post is explicity set to True
     if pre_deployment_checks and not post_deployment_checks:

@@ -169,12 +169,11 @@ def load_iotops_arguments(self, _):
         context.argument(
             "detail_level",
             options_list=["--detail-level"],
-            default=ResourceOutputDetailLevel.summary.value,
             choices=ResourceOutputDetailLevel.list(),
             arg_type=get_enum_type(ResourceOutputDetailLevel),
             help="Controls the level of detail displayed in the check output. "
             "Choose 0 for a summary view (minimal output), "
-            "1 for a detailed view (more comprehensive information), "
+            "1 for a default view, "
             "or 2 for a verbose view (all available information).",
         ),
         context.argument(
