@@ -10,7 +10,7 @@ from rich.padding import Padding
 from typing import Any, Dict, List, Optional, Tuple
 
 from .check_manager import CheckManager
-from ..common import ALL_NAMESPACES_TARGET
+from ..common import ALL_NAMESPACES_TARGET, ResourceOutputDetailLevel
 from ....common import CheckTaskStatus
 
 logger = get_logger(__name__)
@@ -41,7 +41,7 @@ def add_display_and_eval(
 
 
 # TODO: test + refactor
-def display_as_list(console: Console, result: Dict[str, Any]) -> None:
+def display_as_list(console: Console, result: Dict[str, Any], detail_level: int) -> None:
     success_count: int = 0
     warning_count: int = 0
     error_count: int = 0
@@ -76,6 +76,9 @@ def display_as_list(console: Console, result: Dict[str, Any]) -> None:
 
     def _enumerate_displays(checks: List[Dict[str, dict]]) -> None:
         for check in checks:
+            if not check:
+                import pdb; pdb.set_trace()
+                continue
             status = check.get("status")
             prefix_emoji = _get_emoji_from_status(status)
             console.print(Padding(f"{prefix_emoji} {check['description']}", (0, 0, 0, 4)))
@@ -103,6 +106,26 @@ def display_as_list(console: Console, result: Dict[str, Any]) -> None:
             console.print(NewLine(1))
         console.print(NewLine(1))
 
+    def _summary_display(checks: List[Dict[str, dict]]) -> None:
+        for check in checks:
+            status = check.get("status")
+            prefix_emoji = _get_emoji_from_status(status)
+            console.print(Padding(f"{prefix_emoji} {check['description']}", (0, 0, 0, 4)))
+
+            targets = check.get("targets", {})
+            for _target in targets:
+                target = targets[_target]
+                target_status = target.get("status")
+                target_emoji = _get_emoji_from_status(target_status)
+                console.print(Padding(f"- {target_emoji} {_target}", (0, 0, 0, 8)))
+                evals = target.get('evaluations', [])
+                for eval in evals:
+                    if eval.get('name'):
+                        eval_status = eval.get('status')
+                        eval_emoji = _get_emoji_from_status(eval_status)
+                        console.print(Padding(f"- {eval_emoji} {eval['name']}", (0, 0, 0, 12)))
+            console.print(NewLine(1))
+        console.print(NewLine(1))
     title: dict = result.get("title")
     if title:
         console.print(NewLine(1))
@@ -115,7 +138,11 @@ def display_as_list(console: Console, result: Dict[str, Any]) -> None:
         console.print(NewLine(1))
         _enumerate_displays(pre_checks)
 
-    post_checks: List[dict] = result.get("postDeployment")
+    post_checks: List[dict] = [check for check in result.get("postDeployment") if check]
+
+    if detail_level == ResourceOutputDetailLevel.summary.value:
+        _summary_display(post_checks)
+        return
     if post_checks:
         console.rule("Post deployment checks", align="left")
         console.print(NewLine(1))
@@ -142,3 +169,7 @@ def process_value_color(
         )
         return f"[red]{value}[/red]"
     return f"[cyan]{value}[/cyan]"
+
+
+
+
