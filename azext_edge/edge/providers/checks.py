@@ -81,7 +81,7 @@ def run_checks(
                 )
 
         if as_list:
-            return display_as_list(console=console, result=result)
+            return display_as_list(console=console, result=result, detail_level=detail_level)
         return result
 
 
