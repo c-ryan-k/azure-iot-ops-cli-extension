@@ -127,6 +127,7 @@ def evaluate_diagnostics_service(
             target_name=target_diagnostic_service,
             status=status,
             value=fetch_diagnostics_services_error,
+            resource_name=resource_name,
         )
         check_manager.add_display(
             target_name=target_diagnostic_service,
@@ -172,6 +173,7 @@ def evaluate_diagnostics_service(
             namespace=namespace,
             status=service_count_status,
             value=diagnostic_service_count,
+            summary=f"{diagnostic_service_count} Diagnostic Service{'' if diagnostic_service_count == 1 else 's'} per namespace",
         )
         check_manager.add_display(
             target_name=target_diagnostic_service,
@@ -217,6 +219,7 @@ def evaluate_diagnostics_service(
                 namespace=namespace,
                 status=CheckTaskStatus.success.value,
                 value={"spec": diag_service_resource_spec},
+                summary="Diagnostic Service spec",
             )
 
             # check for service deployed in namespace
@@ -237,6 +240,7 @@ def evaluate_diagnostics_service(
                 check_manager.add_target_eval(
                     target_name=target_service_deployed,
                     namespace=namespace,
+                    summary="Service detected",
                     status=CheckTaskStatus.error.value,
                     value=None,
                 )
@@ -442,6 +446,7 @@ def evaluate_broker_listeners(
                     check_manager.add_target_eval(
                         target_name=target_listener_service,
                         namespace=namespace,
+                        resource_name=listener_spec_service_name,
                         status=listener_service_eval_status,
                         value="Unable to fetch service.",
                     )
@@ -507,6 +512,7 @@ def evaluate_broker_listeners(
                             check_manager.add_target_eval(
                                 target_name=target_listener_service,
                                 namespace=namespace,
+                                resource_name=listener_spec_service_name,
                                 status=listener_service_eval_status,
                                 value=service_status,
                             )
@@ -534,6 +540,7 @@ def evaluate_broker_listeners(
                             check_manager.add_target_eval(
                                 target_name=target_listener_service,
                                 namespace=namespace,
+                                resource_name=listener_spec_service_name,
                                 status=listener_service_eval_status,
                                 value={"spec.clusterIP": cluster_ip},
                             )
@@ -753,6 +760,7 @@ def evaluate_brokers(
                 check_manager.add_target_eval(
                     target_name=target_brokers,
                     namespace=namespace,
+                    resource_name=AIO_MQ_DIAGNOSTICS_SERVICE,
                     status=CheckTaskStatus.warning.value,
                     value=None,
                 )
