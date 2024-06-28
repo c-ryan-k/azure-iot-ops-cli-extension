@@ -4,6 +4,7 @@
 # Licensed under the MIT License. See License file in the project root for license information.
 # ----------------------------------------------------------------------------------------------
 
+from itertools import groupby
 from knack.log import get_logger
 from rich.console import Console, NewLine
 from rich.padding import Padding
@@ -109,6 +110,8 @@ def display_as_list(console: Console, result: Dict[str, Any], detail_level: int)
     def _summary_display(checks: List[Dict[str, dict]]) -> None:
         for check in checks:
             status = check.get("status")
+            # if not status or status == CheckTaskStatus.skipped.value:
+            #     continue
             prefix_emoji = _get_emoji_from_status(status)
             console.print(Padding(f"{prefix_emoji} {check['description']}", (0, 0, 0, 4)))
 
@@ -116,14 +119,38 @@ def display_as_list(console: Console, result: Dict[str, Any], detail_level: int)
             for _target in targets:
                 target = targets[_target]
                 target_status = target.get("status")
+                if not target_status or target_status == CheckTaskStatus.skipped.value:
+                    continue
                 target_emoji = _get_emoji_from_status(target_status)
                 console.print(Padding(f"- {target_emoji} {_target}", (0, 0, 0, 8)))
                 evals = target.get('evaluations', [])
-                for eval in evals:
-                    if eval.get('name'):
+
+                # consolidate checks by resource name / type
+                get_eval_display = lambda eval: eval.get('name') or eval.get('summary')
+                evals = [eval for eval in evals if get_eval_display(eval)]
+                evals.sort(key=get_eval_display)
+                evals_by_resource = groupby(evals, key=get_eval_display)
+                
+                for (eval_name, evals) in evals_by_resource:
+                    evals = list(evals)
+                    eval_desc = eval_name
+                    # if more than one eval for a specific name,
+                    if len(evals) > 1:
+                        # determine worst_status for all evals
+                        worst_status = CheckTaskStatus.success.value
+                        for eval in evals:
+                            eval_status = eval.get('status')
+                            if eval_status == CheckTaskStatus.error.value:
+                                worst_status = CheckTaskStatus.error.value
+                                break
+                            elif eval_status == CheckTaskStatus.warning.value and worst_status != CheckTaskStatus.error.value:
+                                worst_status = CheckTaskStatus.warning.value
+                        eval_emoji = _get_emoji_from_status(worst_status)
+                    else:
+                        eval = evals[0]
                         eval_status = eval.get('status')
                         eval_emoji = _get_emoji_from_status(eval_status)
-                        console.print(Padding(f"- {eval_emoji} {eval['name']}", (0, 0, 0, 12)))
+                    console.print(Padding(f"- {eval_emoji} {eval_desc}", (0, 0, 0, 12)))
             console.print(NewLine(1))
         console.print(NewLine(1))
     title: dict = result.get("title")

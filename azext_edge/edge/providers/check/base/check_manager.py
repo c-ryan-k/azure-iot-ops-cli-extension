@@ -112,6 +112,7 @@ class CheckManager:
         namespace: str = ALL_NAMESPACES_TARGET,
         resource_name: Optional[str] = None,
         resource_kind: Optional[str] = None,
+        summary: Optional[str] = None,
     ) -> None:
         eval_dict = {"status": status}
         if resource_name:
@@ -120,6 +121,8 @@ class CheckManager:
             eval_dict["value"] = value
         if resource_kind:
             eval_dict["kind"] = resource_kind
+        if summary:
+            eval_dict["summary"] = summary
         self.targets[target_name][namespace]["evaluations"].append(eval_dict)
         self._process_status(target_name, status, namespace)
 

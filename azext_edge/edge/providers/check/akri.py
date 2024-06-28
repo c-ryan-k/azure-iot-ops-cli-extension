@@ -193,6 +193,7 @@ def evaluate_configurations(
                 check_manager=check_manager,
                 target_name=target_configurations,
                 namespace=namespace,
+                resource_name=configuration_name,
                 discovery_handler=discovery_handler,
                 detail_level=detail_level,
                 padding=property_padding,
@@ -375,6 +376,7 @@ def _validate_one_of_conditions(
         check_manager: CheckManager,
         eval_value: dict,
         namespace: str,
+        resource_name: str,
         target_name: str,
         padding: int,
 ) -> None:
@@ -414,6 +416,7 @@ def _validate_one_of_conditions(
     check_manager.add_target_eval(
         target_name=target_name,
         namespace=namespace,
+        resource_name=resource_name,
         status=eval_status,
         value=eval_value
     )
@@ -423,6 +426,7 @@ def _evaluate_discovery_handler(
     check_manager: CheckManager,
     target_name: str,
     namespace: str,
+    resource_name: str,
     discovery_handler: dict,
     detail_level: int,
     padding: int,
@@ -511,6 +515,7 @@ def _evaluate_discovery_handler(
                 check_manager.add_target_eval(
                     target_name=target_name,
                     namespace=namespace,
+                    resource_name=resource_name,
                     status=property_name_eval_status,
                     value=property_name_eval_value
                 )
@@ -530,6 +535,7 @@ def _evaluate_discovery_handler(
                     check_manager=check_manager,
                     eval_value=value_eval_value,
                     namespace=namespace,
+                    resource_name=resource_name,
                     target_name=target_name,
                     padding=property_padding
                 )
@@ -569,6 +575,7 @@ def _evaluate_discovery_handler(
                         check_manager=check_manager,
                         eval_value=key_ref_eval_value,
                         namespace=namespace,
+                        resource_name=resource_name,
                         target_name=target_name,
                         padding=key_ref_padding
                     )
@@ -611,6 +618,7 @@ def _evaluate_discovery_handler(
                         check_manager.add_target_eval(
                             target_name=target_name,
                             namespace=namespace,
+                            resource_name=resource_name,
                             status=key_ref_name_eval_status,
                             value=key_ref_name_eval_value
                         )
