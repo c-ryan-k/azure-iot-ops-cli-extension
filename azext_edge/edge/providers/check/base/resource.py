@@ -49,7 +49,7 @@ def enumerate_ops_service_resources(
     )
 
     if not api_resources:
-        check_manager.add_target_eval(target_name=target_api, status=CheckTaskStatus.skipped.value)
+        check_manager.add_target_eval(target_name=target_api, status=CheckTaskStatus.skipped.value,  summary="API detected")
         missing_api_text = (
             f"[bright_blue]{target_api}[/bright_blue] API resources [red]not[/red] detected."
             "\n\n[bright_white]Skipping deployment evaluation[/bright_white]."
@@ -71,10 +71,12 @@ def enumerate_ops_service_resources(
                 display=Padding(f"[cyan]{r.kind}[/cyan]", (0, 0, 0, 12)),
             )
 
+    # hack - using "resource_name" to add summary view detail
     check_manager.add_target_eval(
         target_name=target_api,
         status=CheckTaskStatus.success.value,
         value=list(resource_kind_map.keys()),
+        summary="API resources",
     )
     return check_manager.as_dict(as_list), resource_kind_map
 
