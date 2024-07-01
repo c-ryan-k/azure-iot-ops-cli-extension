@@ -20,22 +20,30 @@ from azext_edge.edge.providers.check.common import (
 logger = get_logger(__name__)
 
 
+@pytest.mark.parametrize("svc", [None, 'mq'])
 @pytest.mark.parametrize("post", [None, False, True])
 @pytest.mark.parametrize("pre", [None, False, True])
-def test_check_pre_post(init_setup, post, pre):
-    command = "az iot ops check --as-object "
+def test_check_pre_post(init_setup, svc, post, pre,):
+    command = "az iot ops check --as-object"
+    if svc:
+        command += f" --svc {svc}"
     if pre is not None:
         command += f" --pre {pre}"
     if post is not None:
         command += f" --post {post}"
     result = run(command)
 
-    # default service title
-    expected_title = "Evaluation for {mq} service deployment"
-    expected_precheck_title = "IoT Operations readiness"
     expected_pre = not post if pre is None else pre
     expected_post = not pre if post is None else post
-    assert result["title"] == expected_title if expected_post else expected_precheck_title
+    expected_title_inner = f"{{{svc or 'IoT Operations'}}}"
+
+    if expected_post:
+        # correct title display
+        expected_svc_title = f"Evaluation for {expected_title_inner} service deployment"
+        assert result["title"] == expected_svc_title
+    else:
+        expected_precheck_title = "Evaluation for IoT Operations readiness"
+        assert result["title"] == expected_precheck_title
 
     if pre is None and not post:
         try:

@@ -50,7 +50,7 @@ def run_checks(
 
         color = COLOR_STR_FORMAT.format(color="bright_blue", value="{text}") if as_list else "{text}"
         title_subject = (
-            f"{{[bright_blue]{ops_service or 'IoT Operations'}[/bright_blue]}} service deployment"
+            f"{{{color.format(text=(ops_service or 'IoT Operations'))}}} service deployment"
             if post_deployment
             else color.format(text="IoT Operations readiness")
         )
