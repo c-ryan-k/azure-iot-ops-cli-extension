@@ -41,45 +41,72 @@ def add_display_and_eval(
     )
 
 
-# TODO: test + refactor
-def display_as_list(console: Console, result: Dict[str, Any], detail_level: int) -> None:
-    success_count: int = 0
-    warning_count: int = 0
-    error_count: int = 0
-    skipped_count: int = 0
+class DisplayManager():
+    def __init__(self, console: Console):
+        self.console = console
+        self.success_count = 0
+        self.warning_count = 0
+        self.error_count = 0
+        self.skipped_count = 0
 
-    def _increment_summary(status: str) -> None:
-        nonlocal success_count, warning_count, error_count, skipped_count
+    def _increment_summary(self, status: str) -> None:
         if not status:
             return
         if status == CheckTaskStatus.success.value:
-            success_count = success_count + 1
+            self.success_count = self.success_count + 1
         elif status == CheckTaskStatus.warning.value:
-            warning_count = warning_count + 1
+            self.warning_count = self.warning_count + 1
         elif status == CheckTaskStatus.error.value:
-            error_count = error_count + 1
+            self.error_count = self.error_count + 1
         elif status == CheckTaskStatus.skipped.value:
-            skipped_count = skipped_count + 1
+            self.skipped_count = self.skipped_count + 1
 
-    def _print_summary() -> None:
-        from rich.panel import Panel
+    # TODO: test + refactor
+    def display_as_list(self, result: Dict[str, Any], detail_level: int) -> None:
 
-        success_content = f"[green]{success_count} check(s) succeeded.[/green]"
-        warning_content = f"{warning_count} check(s) raised warnings."
-        warning_content = (
-            f"[green]{warning_content}[/green]" if not warning_count else f"[yellow]{warning_content}[/yellow]"
-        )
-        error_content = f"{error_count} check(s) raised errors."
-        error_content = f"[green]{error_content}[/green]" if not error_count else f"[red]{error_content}[/red]"
-        skipped_content = f"[bright_white]{skipped_count} check(s) were skipped[/bright_white]."
-        content = f"{success_content}\n{warning_content}\n{error_content}\n{skipped_content}"
-        console.print(Panel(content, title="Check Summary", expand=False))
+        def _print_summary() -> None:
+            from rich.panel import Panel
 
-    def _enumerate_displays(checks: List[Dict[str, dict]]) -> None:
+            success_content = f"[green]{self.success_count} check(s) succeeded.[/green]"
+            warning_content = f"{self.warning_count} check(s) raised warnings."
+            warning_content = (
+                f"[green]{warning_content}[/green]" if not self.warning_count else f"[yellow]{warning_content}[/yellow]"
+            )
+            error_content = f"{self.error_count} check(s) raised errors."
+            error_content = f"[green]{error_content}[/green]" if not self.error_count else f"[red]{error_content}[/red]"
+            skipped_content = f"[bright_white]{self.skipped_count} check(s) were skipped[/bright_white]."
+            content = f"{success_content}\n{warning_content}\n{error_content}\n{skipped_content}"
+            self.console.print(Panel(content, title="Check Summary", expand=False))
+
+        title: dict = result.get("title")
+        if title:
+            self.console.print(NewLine(1))
+            self.console.rule(title, align="center", style="blue bold")
+            self.console.print(NewLine(1))
+
+        pre_checks: List[dict] = result.get("preDeployment")
+        if pre_checks:
+            self.console.rule("Pre deployment checks", align="left")
+            self.console.print(NewLine(1))
+            self._enumerate_displays(pre_checks)
+
+        post_checks: List[dict] = [check for check in result.get("postDeployment", []) if check]
+
+        if detail_level == ResourceOutputDetailLevel.summary.value:
+            self._summary_display(post_checks)
+            return
+        if post_checks:
+            self.console.rule("Post deployment checks", align="left")
+            self.console.print(NewLine(1))
+            self._enumerate_displays(post_checks)
+
+        _print_summary()
+
+    def _enumerate_displays(self, checks: List[Dict[str, dict]]) -> None:
         for check in checks:
             status = check.get("status")
             prefix_emoji = _get_emoji_from_status(status)
-            console.print(Padding(f"{prefix_emoji} {check['description']}", (0, 0, 0, 4)))
+            self.console.print(Padding(f"{prefix_emoji} {check['description']}", (0, 0, 0, 4)))
 
             targets = check.get("targets", {})
             for type in targets:
@@ -91,26 +118,26 @@ def display_as_list(console: Console, result: Dict[str, Any], detail_level: int)
                         # display status indicator on each 'namespaced' grouping of displays
                         if all([idx == 0, namespace != ALL_NAMESPACES_TARGET, status]):
                             prefix_emoji = _get_emoji_from_status(status)
-                            console.print(Padding(f"\n{prefix_emoji} {disp.renderable}", (0, 0, 0, 6)))
+                            self.console.print(Padding(f"\n{prefix_emoji} {disp.renderable}", (0, 0, 0, 6)))
                         else:
-                            console.print(disp)
+                            self.console.print(disp)
                     target_status = targets[type][namespace].get("status")
                     evaluations = targets[type][namespace].get("evaluations", [])
                     if not evaluations:
-                        _increment_summary(target_status)
+                        self._increment_summary(target_status)
                     for e in evaluations:
                         eval_status = e.get("status")
-                        _increment_summary(eval_status)
-            console.print(NewLine(1))
-        console.print(NewLine(1))
+                        self._increment_summary(eval_status)
+            self.console.print(NewLine(1))
+        self.console.print(NewLine(1))
 
-    def _summary_display(checks: List[Dict[str, dict]]) -> None:
+    def _summary_display(self, checks: List[Dict[str, dict]]) -> None:
         for check in checks:
             status = check.get("status")
             if not status or status == CheckTaskStatus.skipped.value:
                 continue
             prefix_emoji = _get_emoji_from_status(status)
-            console.print(Padding(f"{prefix_emoji} {check['description']}", (0, 0, 0, 4)))
+            self.console.print(Padding(f"{prefix_emoji} {check['description']}", (0, 0, 0, 4)))
 
             targets = check.get("targets", {})
             for _target in targets:  # diagnosticservices.mq.iotoperations.azure.com
@@ -122,7 +149,7 @@ def display_as_list(console: Console, result: Dict[str, Any], detail_level: int)
                     if not namespace_status or namespace_status == CheckTaskStatus.skipped.value:
                         continue
                     target_emoji = _get_emoji_from_status(namespace_status)
-                    console.print(Padding(f"- {target_emoji} {_target}{namespace_suffix}", (0, 0, 0, 8)))
+                    self.console.print(Padding(f"- {target_emoji} {_target}{namespace_suffix}", (0, 0, 0, 8)))
 
                     # consolidate checks by resource name / type
                     def get_eval_display(eval: dict) -> Optional[str]:
@@ -143,7 +170,6 @@ def display_as_list(console: Console, result: Dict[str, Any], detail_level: int)
                                 eval_status = eval.get('status')
                                 if eval_status == CheckTaskStatus.error.value:
                                     worst_status = CheckTaskStatus.error.value
-                                    break
                                 elif eval_status == CheckTaskStatus.warning.value and worst_status != CheckTaskStatus.error.value:
                                     worst_status = CheckTaskStatus.warning.value
                             eval_emoji = _get_emoji_from_status(worst_status)
@@ -151,32 +177,9 @@ def display_as_list(console: Console, result: Dict[str, Any], detail_level: int)
                             eval = evals[0]
                             eval_status = eval.get('status')
                             eval_emoji = _get_emoji_from_status(eval_status)
-                        console.print(Padding(f"- {eval_emoji} {eval_desc}", (0, 0, 0, 12)))
-                console.print(NewLine(1))
-        console.print(NewLine(1))
-    title: dict = result.get("title")
-    if title:
-        console.print(NewLine(1))
-        console.rule(title, align="center", style="blue bold")
-        console.print(NewLine(1))
-
-    pre_checks: List[dict] = result.get("preDeployment")
-    if pre_checks:
-        console.rule("Pre deployment checks", align="left")
-        console.print(NewLine(1))
-        _enumerate_displays(pre_checks)
-
-    post_checks: List[dict] = [check for check in result.get("postDeployment", []) if check]
-
-    if detail_level == ResourceOutputDetailLevel.summary.value:
-        _summary_display(post_checks)
-        return
-    if post_checks:
-        console.rule("Post deployment checks", align="left")
-        console.print(NewLine(1))
-        _enumerate_displays(post_checks)
-
-    _print_summary()
+                        self.console.print(Padding(f"- {eval_emoji} {eval_desc}", (0, 0, 0, 12)))
+                self.console.print(NewLine(1))
+        self.console.print(NewLine(1))
 
 
 def _get_emoji_from_status(status: str) -> str:

@@ -9,8 +9,10 @@ from typing import Any, Dict, List
 from azure.cli.core.azclierror import ArgumentUsageError
 from rich.console import Console
 
+from azext_edge.edge.providers.check.base.display import DisplayManager
+
 from ..common import ListableEnum, OpsServiceType
-from .check.base import check_pre_deployment, display_as_list
+from .check.base import check_pre_deployment
 from .check.common import COLOR_STR_FORMAT, ResourceOutputDetailLevel
 from .check.dataprocessor import check_dataprocessor_deployment
 from .check.deviceregistry import check_deviceregistry_deployment
@@ -81,7 +83,7 @@ def run_checks(
                 )
 
         if as_list:
-            return display_as_list(console=console, result=result, detail_level=detail_level)
+            return DisplayManager(console=console).display_as_list(result=result, detail_level=detail_level)
         return result
 
 
