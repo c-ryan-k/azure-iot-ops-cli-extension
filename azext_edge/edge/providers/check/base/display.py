@@ -165,7 +165,7 @@ def display_as_list(console: Console, result: Dict[str, Any], detail_level: int)
         console.print(NewLine(1))
         _enumerate_displays(pre_checks)
 
-    post_checks: List[dict] = [check for check in result.get("postDeployment") if check]
+    post_checks: List[dict] = [check for check in result.get("postDeployment", []) if check]
 
     if detail_level == ResourceOutputDetailLevel.summary.value:
         _summary_display(post_checks)
