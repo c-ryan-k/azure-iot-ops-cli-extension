@@ -48,24 +48,6 @@ from ..support.mq import MQ_NAME_LABEL
 from ..base import get_namespaced_service
 
 
-def evaluate_mq_summary(
-    as_list: bool = False,
-    detail_level: int = ResourceOutputDetailLevel.summary.value,
-    resource_name: str = None,
-):
-    # create check manager
-    check_manager = CheckManager(
-        check_name="evalBrokerDiag",
-        check_desc="Evaluate MQ Diagnostics Service",
-    )
-
-    # get diagnostic
-    all_diagnostic_services = get_resources_by_name(
-        api_info=MQ_ACTIVE_API,
-        kind=MqResourceKinds.DIAGNOSTIC_SERVICE,
-        resource_name=resource_name,
-    )
-
 def check_mq_deployment(
     result: Dict[str, Any],
     as_list: bool = False,
