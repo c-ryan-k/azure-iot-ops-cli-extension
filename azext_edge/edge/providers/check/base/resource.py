@@ -49,7 +49,7 @@ def enumerate_ops_service_resources(
     )
 
     if not api_resources:
-        check_manager.add_target_eval(target_name=target_api, status=CheckTaskStatus.error.value,  summary="API detected")
+        check_manager.add_target_eval(target_name=target_api, status=CheckTaskStatus.error.value, summary="API detected")
         missing_api_text = (
             f"[bright_blue]{target_api}[/bright_blue] API resources [red]not[/red] detected."
         )

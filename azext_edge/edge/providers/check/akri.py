@@ -117,7 +117,6 @@ def evaluate_configurations(
     resource_name: str = None,
 ) -> Dict[str, Any]:
     check_manager = CheckManager(check_name="evalConfigurations", check_desc="Evaluate Akri configurations")
-     
 
     target_configurations = generate_target_resource_name(api_info=AKRI_API_V0, resource_kind=AkriResourceKinds.CONFIGURATION.value)
     configuration_conditions = []

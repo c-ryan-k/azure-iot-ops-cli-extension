@@ -123,14 +123,15 @@ def display_as_list(console: Console, result: Dict[str, Any], detail_level: int)
                         continue
                     target_emoji = _get_emoji_from_status(namespace_status)
                     console.print(Padding(f"- {target_emoji} {_target}{namespace_suffix}", (0, 0, 0, 8)))
-                    evals = namespace.get('evaluations', [])
 
                     # consolidate checks by resource name / type
-                    get_eval_display = lambda eval: eval.get('name') or eval.get('summary')
-                    evals = [eval for eval in evals if get_eval_display(eval)]
+                    def get_eval_display(eval: dict) -> Optional[str]:
+                        return eval.get('name') or eval.get('summary')
+
+                    evals = [eval for eval in namespace.get('evaluations', []) if get_eval_display(eval)]
                     evals.sort(key=get_eval_display)
                     evals_by_resource = groupby(evals, key=get_eval_display)
-                    
+
                     for (eval_name, evals) in evals_by_resource:
                         evals = list(evals)
                         eval_desc = eval_name
@@ -196,7 +197,3 @@ def process_value_color(
         )
         return f"[red]{value}[/red]"
     return f"[cyan]{value}[/cyan]"
-
-
-
-
