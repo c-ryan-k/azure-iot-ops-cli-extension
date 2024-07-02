@@ -94,8 +94,7 @@ class DisplayManager():
 
         if detail_level == ResourceOutputDetailLevel.summary.value:
             self._summary_display(post_checks)
-            return
-        if post_checks:
+        elif post_checks:
             self.console.rule("Post deployment checks", align="left")
             self.console.print(NewLine(1))
             self._enumerate_displays(post_checks)
@@ -156,6 +155,8 @@ class DisplayManager():
                         return eval.get('name') or eval.get('summary')
 
                     evals = [eval for eval in namespace.get('evaluations', []) if get_eval_display(eval)]
+                    if not evals:
+                        self._increment_summary(namespace_status)
                     evals.sort(key=get_eval_display)
                     evals_by_resource = groupby(evals, key=get_eval_display)
 
@@ -172,11 +173,13 @@ class DisplayManager():
                                     worst_status = CheckTaskStatus.error.value
                                 elif eval_status == CheckTaskStatus.warning.value and worst_status != CheckTaskStatus.error.value:
                                     worst_status = CheckTaskStatus.warning.value
+                            eval_status = worst_status
                             eval_emoji = _get_emoji_from_status(worst_status)
                         else:
                             eval = evals[0]
                             eval_status = eval.get('status')
                             eval_emoji = _get_emoji_from_status(eval_status)
+                        self._increment_summary(eval_status)
                         self.console.print(Padding(f"- {eval_emoji} {eval_desc}", (0, 0, 0, 12)))
                 self.console.print(NewLine(1))
         self.console.print(NewLine(1))
