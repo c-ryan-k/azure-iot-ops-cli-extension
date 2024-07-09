@@ -28,7 +28,6 @@ SIMULATOR_PREFIX = "opcplc-"
 OPC_PREFIX = "aio-opc-"
 OPC_APP_LABEL = "app in (aio-opc-supervisor, aio-opc-admission-controller)"
 OPC_NAME_LABEL = NAME_LABEL_FORMAT.format(label="aio-opc-opcua-connector, opcplc")
-OPC_NAME_VAR_LABEL = "name in (aio-opc-asset-discovery)"
 OPC_DIRECTORY_PATH = OPCUA_API_V1.moniker
 
 # TODO: once this label is stabled, we can remove the other labels
@@ -40,7 +39,6 @@ def fetch_pods(since_seconds: int = DAY_IN_SECONDS):
     pod_name_labels = [
         OPC_APP_LABEL,
         OPC_NAME_LABEL,
-        OPC_NAME_VAR_LABEL,
     ]
     for pod_name_label in pod_name_labels:
         opcua_pods.extend(
@@ -85,16 +83,7 @@ def fetch_services():
 
 
 def fetch_daemonsets():
-    processed = process_daemonsets(
-        directory_path=OPC_DIRECTORY_PATH,
-        field_selector="metadata.name==aio-opc-asset-discovery",
-    )
-    processed.extend(
-        process_daemonsets(
-            directory_path=OPC_DIRECTORY_PATH,
-            label_selector=OPCUA_NAME_LABEL,
-        )
-    )
+    processed = process_daemonsets(directory_path=OPC_DIRECTORY_PATH, label_selector=OPCUA_NAME_LABEL)
     return processed
 
 

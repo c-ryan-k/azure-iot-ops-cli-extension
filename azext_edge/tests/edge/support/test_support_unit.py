@@ -46,7 +46,6 @@ from azext_edge.edge.providers.support.opcua import (
     OPC_APP_LABEL,
     OPC_DIRECTORY_PATH,
     OPC_NAME_LABEL,
-    OPC_NAME_VAR_LABEL,
     OPCUA_NAME_LABEL,
 )
 from azext_edge.edge.providers.support.orc import (
@@ -246,15 +245,6 @@ def test_create_bundle(
                 mocked_client,
                 mocked_zipfile,
                 mocked_list_pods,
-                label_selector=OPC_NAME_VAR_LABEL,
-                directory_path=OPC_DIRECTORY_PATH,
-                since_seconds=since_seconds,
-                include_metrics=True,
-            )
-            assert_list_pods(
-                mocked_client,
-                mocked_zipfile,
-                mocked_list_pods,
                 label_selector=OPCUA_NAME_LABEL,
                 directory_path=OPC_DIRECTORY_PATH,
                 since_seconds=since_seconds,
@@ -309,13 +299,6 @@ def test_create_bundle(
             )
             assert_list_services(
                 mocked_client, mocked_zipfile, label_selector=OPCUA_NAME_LABEL, directory_path=OPC_DIRECTORY_PATH
-            )
-            # TODO: one-off field selector remove after label
-            assert_list_daemon_sets(
-                mocked_client,
-                mocked_zipfile,
-                field_selector="metadata.name==aio-opc-asset-discovery",
-                directory_path=OPC_DIRECTORY_PATH,
             )
             assert_list_daemon_sets(
                 mocked_client,
