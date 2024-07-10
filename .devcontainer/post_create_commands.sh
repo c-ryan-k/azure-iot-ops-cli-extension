@@ -1,3 +1,6 @@
+# k3s image
+K3S_VERSION="v1.30.2-k3s1"
+
 # wait for docker
 until docker version > /dev/null 2>&1
 do
@@ -7,7 +10,7 @@ done
 
 # create local k3s cluster
 echo "Creating k3d cluster"
-k3d cluster create \
+k3d cluster create --image rancher/k3s:$K3S_VERSION \
 -p '1883:1883@loadbalancer' \
 -p '8883:8883@loadbalancer' \
 -p '6001:6001@loadbalancer' \
