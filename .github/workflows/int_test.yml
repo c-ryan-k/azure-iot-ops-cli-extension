@@ -125,7 +125,6 @@ jobs:
           install_dir="/usr/local/bin/k3s"
 
           # install
-          sudo apt install nfs-common
           curl -Lo $install_dir "$release_url/${{ env.K3S_VERSION }}/k3s"
           chmod a+x $install_dir
 
