@@ -60,6 +60,15 @@ def fetch_pods(since_seconds: int = DAY_IN_SECONDS):
             include_metrics=True,
         )
     )
+    # opcplc simulator prefix
+    opcua_pods.extend(
+        process_v1_pods(
+            directory_path=OPC_DIRECTORY_PATH,
+            since_seconds=since_seconds,
+            include_metrics=True,
+            prefix_names=[SIMULATOR_PREFIX]
+        )
+    )
     return opcua_pods
 
 

@@ -80,8 +80,7 @@ def assert_eval_core_service_runtime(
         for pod in kubectl_pods:
             name = kubectl_pods[pod]["metadata"]["name"]
             # find all evals entries for this pod
-            pod_evals = [pod for pod in evals if name in pod["name"]]
-
+            pod_evals = [pod for pod in evals if f"pod/{name}" == pod["name"]]
             assert pod_evals[0]["name"] == f"pod/{name}"
 
             # check phase and conditions
