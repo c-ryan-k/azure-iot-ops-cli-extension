@@ -2,7 +2,7 @@ FROM mcr.microsoft.com/cbl-mariner/base/python:3
 
 # install ca-certificates for curl
 RUN yum update -y && \
- yum -y install ca-certificates && \
+ yum -y install ca-certificates shadow-utils && \
  yum clean all
 
 # install kubectl for tests
@@ -20,6 +20,10 @@ RUN mkdir -p /root/.kube && touch /root/.kube/config
 
 # tox setup
 RUN pip install tox==4.12.1 --no-cache-dir
+
+# switch user
+RUN useradd -s /bin/bash azclitest
+USER azclitest
 
 # run tests - OPCUA Check INT tests are currently disabled
 ENTRYPOINT ["tox", "r", "-vv", "-e", "python-int", "--", "--durations=0", "--ignore=./azext_edge/tests/edge/checks/int/test_opcua_int.py"]
