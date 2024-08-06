@@ -2,7 +2,7 @@ FROM mcr.microsoft.com/cbl-mariner/base/python:3
 
 # install ca-certificates for curl
 RUN yum update -y && \
- yum -y install ca-certificates && \
+ yum -y install ca-certificates shadow-utils && \
  yum clean all
 
 # install kubectl for tests
