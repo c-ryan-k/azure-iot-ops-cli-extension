@@ -18,12 +18,12 @@ COPY . .
 # create empty kubeconfig to mount later as a file
 RUN mkdir -p /root/.kube && touch /root/.kube/config 
 
+# tox setup
+RUN pip install tox==4.12.1 --no-cache-dir
+
 # switch from root user
 RUN groupadd -r testers && useradd -r -g testers tester
 USER tester
-
-# tox setup
-RUN pip install tox==4.12.1 --no-cache-dir
 
 # run tests
 ENTRYPOINT ["tox", "r", "-vv", "-e", "python-int", "--", "--durations=0"]
