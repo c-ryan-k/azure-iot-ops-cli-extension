@@ -172,8 +172,8 @@ jobs:
       - name: "delete ops"
         if: ${{ always() }}
         run: |
-          az iot ops delete --cluster ${{ env.CLUSTER_NAME }} -g ${{ env.RESOURCE_GROUP }} -y
+          az iot ops delete --cluster ${{ env.CLUSTER_NAME }} -g ${{ env.RESOURCE_GROUP }} --include-deps -y
       - name: "Delete connected cluster"
         if: ${{ always() }}
         run: |
-          az connectedk8s delete --name ${{ env.CLUSTER_NAME }} -g ${{ env.RESOURCE_GROUP }} -y --include-deps -y
+          az connectedk8s delete --name ${{ env.CLUSTER_NAME }} -g ${{ env.RESOURCE_GROUP }} -y
