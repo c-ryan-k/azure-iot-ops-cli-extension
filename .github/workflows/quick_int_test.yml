@@ -1,4 +1,4 @@
-name: Integration tests
+name: Quick Integration tests
 on:
   workflow_call:
     inputs:
@@ -103,6 +103,25 @@ jobs:
           cluster-name: ${{ env.CLUSTER_NAME }}
           resource-group: ${{ env.RESOURCE_GROUP }}
           custom-locations-oid: ${{ env.CUSTOM_LOCATIONS_OID }}
+      - name: "Wait for cluster connection"
+        run: |
+          status=$(az connectedk8s show -n ${{ env.CLUSTER_NAME }} -g ${{ env.RESOURCE_GROUP }} --query "connectivityStatus" -o tsv)
+
+          retry_count=0
+          max_retries=5
+          sleep=5
+
+          while [ "$status" != "Connected" ] && [ $retry_count -lt $max_retries ]; do
+            echo "Cluster status is "$status", Retrying in $sleep seconds..."
+            sleep $sleep
+            status=$(az connectedk8s show -n ${{ env.CLUSTER_NAME }} -g ${{ env.RESOURCE_GROUP }} --query "connectivityStatus" -o tsv)
+            retry_count=$((retry_count + 1))
+          done
+
+          if [ "$status" != "Connected" ]; then
+            echo "Cluster connection failed after $max_retries attempts."
+            exit 1
+          fi
       - name: "Az CLI login refresh"
         uses: azure/login@v2
         with:
