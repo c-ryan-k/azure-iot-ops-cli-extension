@@ -133,7 +133,7 @@ jobs:
           # get schema registry
           schema_registry=$(az iot ops schema registry show --name ${{ env.SCHEMA_REGISTRY }} -g ${{ env.RESOURCE_GROUP }} -o tsv --query "id")
           # init
-          az iot ops init --cluster ${{ env.CLUSTER_NAME }} -g ${{ env.RESOURCE_GROUP }} --sr-resource-id $schema_registry
+          az iot ops init --cluster ${{ env.CLUSTER_NAME }} -n ${{ env.CLUSTER_NAME }} -g ${{ env.RESOURCE_GROUP }} --sr-resource-id $schema_registry
       - name: "ops create"
         run: az iot ops create --cluster ${{ env.CLUSTER_NAME }} -g ${{ env.RESOURCE_GROUP }}
       - name: "Output variables for future steps"
