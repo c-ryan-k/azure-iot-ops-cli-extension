@@ -32,6 +32,8 @@ echo "Install AZ CLI EDGE"
 azdev setup -c EDGE
 
 echo "Installing local dev extension"
+# dev_requirements overrides setuptools version to fix wheel build issue
+pip install -r ./dev_requirements.txt
 pip install -U --target ~/.azure/cliextensions/azure-iot-ops .
 
 # setup tox environment dependencies in parallel, but don't run tests
