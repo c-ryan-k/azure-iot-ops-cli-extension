@@ -23,6 +23,7 @@ jobs:
       with:
         resource-group: ops-cli-int-test-rg
         use-container: true
+        init-continue-on-error: ${{ inputs.continue-on-error }}
       secrets:
           AZURE_CLIENT_ID: ${{ secrets.AZURE_CLIENT_ID }}
           AZURE_SUBSCRIPTION_ID: ${{ secrets.AZURE_SUBSCRIPTION_ID }}
