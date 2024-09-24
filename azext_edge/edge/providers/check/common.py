@@ -11,7 +11,7 @@ shared: Define shared data types(enums) and constant strings for IoT Operations 
 
 from enum import Enum
 from typing import List, NamedTuple
-from ...common import CheckTaskStatus, ListableEnum
+from ...common import DEFAULT_DATAFLOW_PROFILE, CheckTaskStatus, ListableEnum
 
 
 class ResourceOutputDetailLevel(ListableEnum):
@@ -185,5 +185,12 @@ DISPLAY_BYTES_PER_GIGABYTE = 10**9
 DEFAULT_PADDING = 8
 PADDING_SIZE = 4
 DEFAULT_PROPERTY_DISPLAY_COLOR = "cyan"
+
+DATAFLOW_PROFILE_NO_DATAFLOW_MESSAGE = f"""
+    [yellow]:warning:[/yellow] Dataflow warning: No dataflows reference the default profile: {DEFAULT_DATAFLOW_PROFILE}
+      Please follow the instructions here to create a dataflow:
+      https://aka.ms/dataflow"""
+
+DATAFLOW_PROFILE_NO_DATAFLOW_ERROR = f"No Dataflows CRs found referring to One Connector: {DEFAULT_DATAFLOW_PROFILE}"
 
 COLOR_STR_FORMAT = "[{color}]{value}[/{color}]"

@@ -15,7 +15,7 @@ from ...providers.edge_api import DATAFLOW_API_V1B1, DEVICEREGISTRY_API_V1, MQ_A
 from .akri import check_akri_deployment
 from .base import CheckManager
 from .base.display import colorize_string
-from .common import ResourceOutputDetailLevel
+from .common import DATAFLOW_PROFILE_NO_DATAFLOW_ERROR, DATAFLOW_PROFILE_NO_DATAFLOW_MESSAGE, ResourceOutputDetailLevel
 from .dataflow import PADDING, check_dataflows_deployment
 from .deviceregistry import check_deviceregistry_deployment
 from .mq import check_mq_deployment
@@ -95,6 +95,9 @@ def check_summary(
         grid = Table.grid(padding=(0, 0, 0, 2))
         add_footer = False
 
+        # track dataflow profile warnings
+        dataflow_profile_no_dataflow_warning = False
+
         # parse check results
         for obj in result:
             status = obj.get("status")
@@ -112,8 +115,29 @@ def check_summary(
             # add row to grid
             grid.add_row(colorize_string(value=emoji, color=color), description)
 
+            # dataflow warning
+            if check.svc == OpsServiceType.dataflow.value and not dataflow_profile_no_dataflow_warning:
+                profile_target = obj.get("targets", {}).get("dataflowprofiles.connectivity.iotoperations.azure.com", {})
+                for namespace in profile_target:
+                    for eval in profile_target[namespace].get("evaluations", []):
+                        eval_value = eval.get("value", {})
+                        eval_runtime_status = eval_value.get("status.runtimeStatus", {})
+                        dataflow_profile_no_dataflow_warning = (
+                            eval_runtime_status
+                            and DATAFLOW_PROFILE_NO_DATAFLOW_ERROR in eval_runtime_status.get("description", "")
+                        )
         # display grid
         check_manager.add_display(target_name=target, display=Padding(grid, (0, 0, 0, PADDING)))
+
+        if dataflow_profile_no_dataflow_warning:
+            check_manager.add_display(target_name=target, display=NewLine())
+            check_manager.add_display(
+                target_name=target,
+                display=Padding(
+                    DATAFLOW_PROFILE_NO_DATAFLOW_MESSAGE,
+                    (0, 0, 0, PADDING),
+                ),
+            )
 
         # service check suggestion footer
         if add_footer:

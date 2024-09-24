@@ -917,7 +917,19 @@ def test_evaluate_dataflow_endpoints(
                         "name",
                         DEFAULT_DATAFLOW_PROFILE,
                     ),
-                    ("value", {'status.provisioningStatus.status': 'success'}),
+                    (
+                        "value",
+                        {
+                            "status.provisioningStatus": {
+                                "status": "success",
+                                "operationId": "operationId",
+                                "logErrors": True,
+                                "output": {
+                                    "message": "message",
+                                },
+                            },
+                        },
+                    ),
                 ],
                 [
                     ("status", "success"),
@@ -925,7 +937,15 @@ def test_evaluate_dataflow_endpoints(
                         "name",
                         DEFAULT_DATAFLOW_PROFILE,
                     ),
-                    ("value", {'status.runtimeStatus.level': 'ok'}),
+                    (
+                        "value",
+                        {
+                            "status.runtimeStatus": {
+                                "level": "ok",
+                                "description": "runtime status",
+                            },
+                        },
+                    ),
                 ],
                 [
                     ("status", "success"),
@@ -1080,8 +1100,14 @@ def test_evaluate_dataflow_endpoints(
                     (
                         "value",
                         {
-                            "status.provisioningStatus.error": {"code": "123", "message": "error message"},
-                            "status.provisioningStatus.status": "error",
+                            "status.provisioningStatus": {
+                                "status": "error",
+                                "error": {
+                                    "code": "123",
+                                    "message": "error message",
+                                },
+                                "failureCause": "failure cause",
+                            },
                         },
                     ),
                 ],
@@ -1090,7 +1116,10 @@ def test_evaluate_dataflow_endpoints(
                     (
                         "value",
                         {
-                            "status.runtimeStatus.level": "ok",
+                            "status.runtimeStatus": {
+                                "level": "ok",
+                                "description": "runtime status",
+                            },
                         },
                     ),
                 ],

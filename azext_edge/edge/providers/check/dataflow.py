@@ -23,6 +23,8 @@ from .base.display import basic_property_display, colorize_string
 from .base.pod import evaluate_pod_health
 from .base.resource import filter_resources_by_name
 from .common import (
+    DATAFLOW_PROFILE_NO_DATAFLOW_ERROR,
+    DATAFLOW_PROFILE_NO_DATAFLOW_MESSAGE,
     DEFAULT_PADDING,
     DEFAULT_PROPERTY_DISPLAY_COLOR,
     PADDING_SIZE,
@@ -166,17 +168,13 @@ def _process_dataflow_resource_status(
 
     # add evals if necessary
     if provisioning_status_enum != CheckTaskStatus.skipped:
-        # todo - add error object to eval value?
-        status_obj = {"status.provisioningStatus.status": provisioning_status_status}
-        if provisioning_status_error:
-            status_obj["status.provisioningStatus.error"] = provisioning_status_error
         check_manager.add_target_eval(
             target_name=target_name,
             namespace=namespace,
             status=provisioning_status_enum.value,
             resource_name=resource_name,
             resource_kind=resource_kind,
-            value=status_obj,
+            value={"status.provisioningStatus": provisioning_status},
         )
     if runtime_status_enum != CheckTaskStatus.skipped:
         check_manager.add_target_eval(
@@ -185,7 +183,7 @@ def _process_dataflow_resource_status(
             status=runtime_status_enum.value,
             resource_name=resource_name,
             resource_kind=resource_kind,
-            value={"status.runtimeStatus.level": runtime_status.get("level")},
+            value={"status.runtimeStatus": runtime_status},
         )
 
 
@@ -1392,6 +1390,8 @@ def evaluate_dataflow_profiles(
 
         # warn if no default dataflow profile (unless possibly filtered)
         default_profile_status = CheckTaskStatus.skipped if resource_name else CheckTaskStatus.warning
+        # add instructions if default dataflow profile warns due to no dataflow CRs
+        default_profile_no_dataflow_warning = False
         for profile in list(profiles):
             profile_name = profile.get("metadata", {}).get("name")
             # check for default dataflow profile
@@ -1419,6 +1419,19 @@ def evaluate_dataflow_profiles(
                 detail_level=detail_level,
                 padding=INNER_PADDING,
             )
+
+            # check for runtimestatus warning due to no dataflows
+            if not default_profile_no_dataflow_warning:
+                runtime_status_level = status.get("runtimeStatus", {}).get("level")
+                runtime_status_description = status.get("runtimeStatus", {}).get("description")
+                if all(
+                    [
+                        profile_name == DEFAULT_DATAFLOW_PROFILE,
+                        runtime_status_level == "warn",
+                        runtime_status_description and DATAFLOW_PROFILE_NO_DATAFLOW_ERROR in runtime_status_description,
+                    ]
+                ):
+                    default_profile_no_dataflow_warning = True
 
             # instance count
             instance_count = spec.get("instanceCount")
@@ -1560,6 +1573,17 @@ def evaluate_dataflow_profiles(
                         color=default_profile_status.color,
                         value=f"\nDefault Dataflow Profile '{DEFAULT_DATAFLOW_PROFILE}' not found in namespace '{namespace}'",
                     ),
+                    (0, 0, 0, PADDING),
+                ),
+            )
+
+        # show warning if default dataflow profile has no dataflow CRs
+        if default_profile_no_dataflow_warning:
+            check_manager.add_display(
+                target_name=target,
+                namespace=namespace,
+                display=Padding(
+                    DATAFLOW_PROFILE_NO_DATAFLOW_MESSAGE,
                     (0, 0, 0, PADDING),
                 ),
             )
