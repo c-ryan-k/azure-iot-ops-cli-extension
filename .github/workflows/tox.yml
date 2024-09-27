@@ -43,6 +43,7 @@ jobs:
         uses: actions/setup-python@v5
         with:
           python-version: |
+            3.8
             3.9
             3.10
             3.11
@@ -51,9 +52,9 @@ jobs:
       - name: Install tox
         run: python -m pip install tox
       - name: Setup test suite
-        run: tox p -vv --notest -e "py39,py310,py311,py312"
+        run: tox p -vv --notest -e "py38,py39,py310,py311,py312"
       - name: Run all python unit tests in parallel
-        run: tox p -vv --skip-pkg-install -e "py39,py310,py311,py312"
+        run: tox p -vv --skip-pkg-install -e "py38,py39,py310,py311,py312"
   code-coverage:
     name: Calculate code coverage
     continue-on-error: true
