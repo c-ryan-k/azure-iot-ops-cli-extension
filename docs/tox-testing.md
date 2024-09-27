@@ -1,15 +1,17 @@
 # Tox Testing Guide
 
+<!-- TODO - update for ops extension -->
+
 [Tox](https://tox.wiki/) is a CLI tool used to run various python testing environments with specific dependencies.
 
 Currently, our testing matrix is broken up into the following groups:
 
 - Python versions to run tests:
-    - 3.7 (support ends 2023-06-27)
-    - 3.8
+    - 3.8 (support ends 10/2024)
     - 3.9
     - 3.10
     - 3.11
+    - 3.12
 - Azure CLI Core versions to test extension against:
     - `azmin` installs the minimum supported CLI version (currently `2.32.0`)
     - `azcur` installs the latest released CLI version from PyPi
