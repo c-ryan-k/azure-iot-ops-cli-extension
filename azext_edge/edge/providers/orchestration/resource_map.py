@@ -140,18 +140,7 @@ class IoTOperationsResourceMap:
         tree = Tree(f"[green]{self.connected_cluster.cluster_name}")
 
         extensions_node = tree.add(label=f"[{category_color}]extensions")
-        if not include_dependencies:
-            # only show aio extension
-            # TODO: @c-ryan-k hacky
-            aio_ext_obj = self.connected_cluster.get_extensions_by_type(IOT_OPS_EXTENSION_TYPE).get(
-                IOT_OPS_EXTENSION_TYPE, {}
-            )
-            if aio_ext_obj:
-                aio_ext_id: str = aio_ext_obj.get("id", "")
-                aio_ext = next((ext for ext in self.extensions if ext.resource_id.lower() == aio_ext_id.lower()), None)
-                if aio_ext:
-                    extensions_node.add(aio_ext.display_name)
-        else:
+        if include_dependencies:
             [extensions_node.add(ext.display_name) for ext in self.extensions]
 
         custom_locations = self.custom_locations

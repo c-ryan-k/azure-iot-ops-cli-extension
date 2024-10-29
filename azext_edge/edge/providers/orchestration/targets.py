@@ -151,11 +151,19 @@ class InitTargets:
             template_blueprint=M3_ENABLEMENT_TEMPLATE,
         )
 
+        # TODO - @c-ryan-k - remove platform extension from init
+        del template.content["resources"]["aio_platform_extension"]
+        del template.content["outputs"]["extensions"]["value"]["platform"]
+        # TODO - @c-ryan-k - remove all other resource "dependsOn" for platform
+        for resource_key in template.content["resources"]:
+            resource = template.content["resources"][resource_key]
+            resource["dependsOn"] = [dep for dep in resource.get("dependsOn", []) if dep != "aio_platform_extension"]
+
         # TODO - @digimaun - expand trustSource for self managed & trustBundleSettings
         return template.content, parameters
 
     def get_ops_instance_template(
-        self, cl_extension_ids: List[str],
+        self, cl_extension_ids: List[str], include_platform_extension: Optional[bool] = True  # , include_aio_extension: Optional[bool] = True
     ) -> Tuple[dict, dict]:
         self.trust_config = self.get_trust_settings_target_map()
 
@@ -176,6 +184,24 @@ class InitTargets:
             },
             template_blueprint=M3_INSTANCE_TEMPLATE,
         )
+        # add platform extension to create
+        if include_platform_extension:
+            # TODO - @c-ryan-k - move platform extension to create
+            enablement = M3_ENABLEMENT_TEMPLATE.content
+            platform_extension = enablement["resources"]["aio_platform_extension"]
+
+            template.add_resource(
+                resource_key="aio_platform_extension",
+                resource_def=platform_extension,
+            )
+            # TODO - @c-ryan-k - add AIO extension "dependsOn"
+            aio_extension = template.content["resources"]["aio_extension"]
+            aio_extension.get("dependsOn", []).append("aio_platform_extension")
+
+            # TODO - @c-ryan-k add platform variables
+            enablement_vars = enablement["variables"]
+            template.content["variables"]["VERSIONS"]["platform"] = enablement_vars["VERSIONS"]["platform"]
+            template.content["variables"]["TRAINS"]["platform"] = enablement_vars["TRAINS"]["platform"]
 
         if self.ops_config:
             aio_default_config: Dict[str, str] = template.content["variables"]["defaultAioConfigurationSettings"]
@@ -187,9 +213,7 @@ class InitTargets:
         instance = template.get_resource_by_key("aioInstance")
         instance["properties"]["description"] = self.instance_description
 
-        instance["properties"]["schemaRegistryRef"] = {
-            "resourceId": "[parameters('schemaRegistryId')]"
-        }
+        instance["properties"]["schemaRegistryRef"] = {"resourceId": "[parameters('schemaRegistryId')]"}
 
         if self.tags:
             instance["tags"] = self.tags

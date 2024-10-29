@@ -351,7 +351,7 @@ class WorkManager:
                 )
                 if not self._extension_map:
                     self._extension_map = self._resource_map.connected_cluster.get_extensions_by_type(
-                        IOT_OPS_PLAT_EXTENSION_TYPE, SECRET_SYNC_EXTENSION_TYPE
+                        SECRET_SYNC_EXTENSION_TYPE
                     )
                     # TODO - @digmaun revisit
                     if any(not v for v in self._extension_map.values()):
@@ -360,10 +360,15 @@ class WorkManager:
                             "Instance deployment will not continue. Please run `az iot ops init`."
                         )
 
+                # TODO - @c-ryan-k remove existing platform extension from create template
+                extensions = self._resource_map.connected_cluster.get_extensions_by_type(IOT_OPS_PLAT_EXTENSION_TYPE)
+                include_platform_extension = not extensions.get(IOT_OPS_PLAT_EXTENSION_TYPE)
+
                 instance_work_name = self._work_format_str.format(op="instance")
                 self.render_display(category=WorkCategoryKey.DEPLOY_IOT_OPS, active_step=WorkStepKey.WHAT_IF_INSTANCE)
                 instance_content, instance_parameters = self._targets.get_ops_instance_template(
                     cl_extension_ids=[self._extension_map[ext]["id"] for ext in self._extension_map],
+                    include_platform_extension=include_platform_extension,
                 )
                 self._deploy_template(
                     content=instance_content,
