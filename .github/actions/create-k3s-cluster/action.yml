@@ -37,7 +37,7 @@ runs:
       shell: bash
     - name: "Write cluster config"
       run: |
-        mkdir ~/.kube/config 2> /dev/null
+        mkdir ~/.kube 2> /dev/null
         sudo k3s kubectl config view --raw > ~/.kube/config
         chmod 600 ~/.kube/config
         export KUBECONFIG=~/.kube/config
