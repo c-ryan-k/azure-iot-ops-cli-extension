@@ -139,7 +139,7 @@ jobs:
       - name: "Checkout extension source for build"
         uses: actions/checkout@v4
       - name: "Build and install local IoT Ops extension from source"
-        run: |z
+        run: |
           pip install -r dev_requirements.txt
           python -m setup bdist_wheel -d dist
           wheel=$(find ./dist/*.whl)
