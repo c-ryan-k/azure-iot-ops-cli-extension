@@ -9,9 +9,6 @@ inputs:
     required: false
     description: 'K3S version string'
     default: "v1.28.5+k3s1"
-  kubeconfig-path:
-    description: 'Path to write the kubeconfig file'
-    default: '~/.kube/config'
 runs:
   using: 'composite'
   steps:
@@ -39,11 +36,9 @@ runs:
         sleep 15s
       shell: bash
     - name: "Write cluster config"
-      env:
-        KUBECONFIG: "${{ inputs.kubeconfig-path }}"
       run: |
-        mkdir -p "${{ env.KUBECONFIG }}" 2> /dev/null
-        sudo k3s kubectl config view --raw > "${{ env.KUBECONFIG }}"
-        chmod 600 "${{env.KUBECONFIG }}"
-        export KUBECONFIG=${{ env.KUBECONFIG }}
+        mkdir ~/.kube/config 2> /dev/null
+        sudo k3s kubectl config view --raw > ~/.kube/config
+        chmod 600 ~/.kube/config
+        export KUBECONFIG=~/.kube/config
       shell: bash
