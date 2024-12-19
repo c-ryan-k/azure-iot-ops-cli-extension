@@ -9,8 +9,6 @@ inputs:
     required: false
     description: 'K3S version string'
     default: "v1.28.5+k3s1"
-  agent-nodes:
-    description: 'Number of extra agent nodes to create'
   kubeconfig-path:
     description: 'Path to write the kubeconfig file'
     default: '~/.kube/config'
@@ -33,16 +31,9 @@ runs:
       env:
         # config
         K3S_KUBECONFIG_MODE: 644
-        K3S_AGENTS: ${{ inputs.agent-nodes != '' && format('--agents "{0}"', inputs.agent-nodes) || '' }}
       run: |
-        # validate agent value
-        if [[ -n "${{ env.K3S_AGENTS }}" && ! "${{ env.K3S_AGENTS }}" =~ ^[0-9]+$ ]]; then
-          echo "Invalid agent-nodes input: ${{ inputs.agent-nodes }}"
-          exit 1
-        fi
-
         # start cluster in background
-        sudo k3s server --cluster-init --servers 1 ${{ env.K3S_AGENTS }} &
+        sudo k3s server --cluster-init &
 
         # allow time for cluster to initialize
         sleep 15s
