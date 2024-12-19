@@ -42,7 +42,7 @@ runs:
         fi
 
         # start cluster in background
-        sudo k3s server --cluster-init --servers ${{ env.K3S_AGENTS }} &
+        sudo k3s server --cluster-init --servers 1 ${{ env.K3S_AGENTS }} &
 
         # allow time for cluster to initialize
         sleep 15s
