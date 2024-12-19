@@ -36,7 +36,7 @@ runs:
         K3S_AGENTS: ${{ inputs.agent-nodes != '' && format('--agents "{0}"', inputs.agent-nodes) || '' }}
       run: |
         # validate agent value
-        if [[ ! ${{ env.K3S_AGENTS }} =~ ^[0-9]+$ ]]; then
+        if [[ ! "${{ env.K3S_AGENTS }}" =~ ^[0-9]+$ ]]; then
           echo "Invalid agent-nodes input: ${{ inputs.agent-nodes }}"
           exit 1
         fi
