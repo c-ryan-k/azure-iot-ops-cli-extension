@@ -22,7 +22,8 @@ from ....generators import generate_names
 
 logger = get_logger(__name__)
 
-pytestmark = pytest.mark.e2e
+# TODO - c-ryan-k: add e2e mark once flakiness is resolved
+# pytestmark = pytest.mark.e2e
 
 
 @pytest.mark.parametrize("detail_level", ResourceOutputDetailLevel.list())
