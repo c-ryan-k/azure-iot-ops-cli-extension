@@ -7,7 +7,7 @@ black
 setuptools==70.0.0
 wheel==0.30.0
 pre-commit
-pylint==3.0.3
+pylint==3.3.6
 flake8
 pytest-xdist
 pytest-rerunfailures
