@@ -394,7 +394,7 @@ def test_process_pod_status(
         detail_level=detail_level,
     )
 
-    assert mocked_check_manager.set_target_conditions.called or mocked_check_manager.add_target_conditions.called
+    assert mocked_check_manager.add_target_conditions.called
     mocked_check_manager.add_target_eval.assert_any_call(
         target_name=target_name,
         namespace=namespace,

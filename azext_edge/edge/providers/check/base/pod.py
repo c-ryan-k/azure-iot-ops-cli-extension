@@ -105,10 +105,7 @@ def _process_pod_status(
         f"{target_service_pod}.status.conditions",
     ]
 
-    if check_manager.targets.get(target, {}).get(namespace, {}).get("conditions", None):
-        check_manager.add_target_conditions(target_name=target, namespace=namespace, conditions=conditions)
-    else:
-        check_manager.set_target_conditions(target_name=target, namespace=namespace, conditions=conditions)
+    check_manager.add_target_conditions(target_name=target, namespace=namespace, conditions=conditions)
 
     pod_dict = pod.to_dict()
     pod_name = pod_dict["metadata"]["name"]

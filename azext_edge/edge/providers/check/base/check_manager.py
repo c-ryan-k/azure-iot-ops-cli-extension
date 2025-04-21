@@ -89,11 +89,6 @@ class CheckManager:
         if description:
             self.targets[target_name][namespace]["description"] = description
 
-    def set_target_conditions(
-        self, target_name: str, conditions: List[str], namespace: str = ALL_NAMESPACES_TARGET
-    ) -> None:
-        self.targets[target_name][namespace]["conditions"] = conditions
-
     def add_target_conditions(
         self, target_name: str, conditions: List[str], namespace: str = ALL_NAMESPACES_TARGET
     ) -> None:

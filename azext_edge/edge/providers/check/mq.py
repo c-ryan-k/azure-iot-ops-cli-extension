@@ -362,7 +362,7 @@ def evaluate_broker_listeners(
         # TODO - add remove duplicates on insertion under checkmanager itself
         listener_conditions = check_manager.targets.get(target_listeners, {}).get(namespace, {}).get("conditions", [])
         listener_conditions = list(set(listener_conditions))
-        check_manager.set_target_conditions(
+        check_manager.add_target_conditions(
             target_name=target_listeners, namespace=namespace, conditions=listener_conditions
         )
 
@@ -461,7 +461,7 @@ def evaluate_brokers(
                 broker_conditions.append("spec.cardinality.frontend.replicas>=1")
                 added_distributed_conditions = True
 
-            check_manager.set_target_conditions(
+            check_manager.add_target_conditions(
                 target_name=target_brokers, namespace=namespace, conditions=broker_conditions
             )
             broker_cardinality: dict = broker_spec.get("cardinality")
@@ -1392,7 +1392,7 @@ def _check_authentication_method(
     # remove duplicate conditions
     check_conditions = check_manager.targets.get(target_authentications, {}).get(namespace, {}).get("conditions", [])
     conditions = list(set(conditions + check_conditions))
-    check_manager.set_target_conditions(
+    check_manager.add_target_conditions(
         target_name=target_authentications,
         namespace=namespace,
         conditions=conditions,
