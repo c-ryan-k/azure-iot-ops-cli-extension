@@ -4,6 +4,7 @@
 # Licensed under the MIT License. See License file in the project root for license information.
 # ----------------------------------------------------------------------------------------------
 
+from os import name
 from typing import List, NamedTuple
 
 from rich.console import NewLine
@@ -69,7 +70,12 @@ def check_summary(
         ),
     ]
 
-    check_manager = CheckManager(check_name="evalAIOSummary", check_desc="Service summary checks", target="summary")
+
+    summary_check_manager = CheckManager(
+        check_name="evalAIOSummary",
+        check_desc="Service summary checks",
+        target="IoT Operations",
+    )
     for check in service_checks:
 
         # run checks for service
@@ -81,8 +87,9 @@ def check_summary(
         )
 
         # add service check results to check manager
-        check_manager.add_check()
-        check_manager.add_display(
+        summary_check_manager.add_check(namespace=check.target)
+        summary_check_manager.add_display(
+            namespace=check.target,
             display=Padding(
                 check.title,
                 (0, 0, 0, PADDING),
@@ -102,7 +109,8 @@ def check_summary(
             emoji = status_obj.emoji
             color = status_obj.color
             description = obj.get("description")
-            check_manager.add_check_eval(
+            summary_check_manager.add_check_eval(
+                namespace=check.target,
                 status=status,
                 value={obj.get("name", "checkResult"): status},
             )
@@ -110,14 +118,14 @@ def check_summary(
             grid.add_row(colorize_string(value=emoji, color=color), description)
 
         # display grid
-        check_manager.add_display(display=Padding(grid, (0, 0, 0, PADDING)))
+        summary_check_manager.add_display(namespace=check.target, display=Padding(grid, (0, 0, 0, PADDING)))
 
         # service check suggestion footer
         if add_footer:
             footer = ":magnifying_glass_tilted_left:" + colorize_string(
                 f" See details by running: az iot ops check --svc {check.svc}"
             )
-            check_manager.add_display(display=NewLine())
-            check_manager.add_display(display=Padding(footer, (0, 0, 0, PADDING)))
+            summary_check_manager.add_display(namespace=check.target, display=NewLine())
+            summary_check_manager.add_display(namespace=check.target, display=Padding(footer, (0, 0, 0, PADDING)))
 
-    return check_manager.as_dict(as_list=as_list)
+    return summary_check_manager.as_dict(as_list=as_list)

@@ -9,11 +9,7 @@ from azure.cli.core.azclierror import ArgumentUsageError
 
 from azext_edge.edge.commands_edge import check
 from azext_edge.edge.providers.checks import run_checks
-from azext_edge.edge.providers.edge_api import (
-    DATAFLOW_API_V1,
-    DEVICEREGISTRY_API_V1,
-    MQ_ACTIVE_API,
-)
+from azext_edge.edge.providers.edge_api import DATAFLOW_API_V1, DEVICEREGISTRY_API_V1, MQ_ACTIVE_API
 
 
 @pytest.mark.parametrize(
@@ -25,14 +21,13 @@ from azext_edge.edge.providers.edge_api import (
                 {
                     "name": "broker",
                     "description": "Evaluate Broker",
+                    "target": "broker.iotoperations.azure.com",
                     "status": "success",
-                    "targets": {
-                        "broker.iotoperations.azure.com": {
+                    "checks": {
+                        "status": "success",
+                        "namespace": {
                             "status": "success",
-                            "namespace": {
-                                "status": "success",
-                            },
-                        }
+                        },
                     },
                 },
             ],
@@ -44,14 +39,13 @@ from azext_edge.edge.providers.edge_api import (
                 {
                     "name": "broker",
                     "description": "Evaluate Broker",
+                    "target": "broker.iotoperations.azure.com",
                     "status": "warning",
-                    "targets": {
-                        "broker.iotoperations.azure.com": {
+                    "checks": {
+                        "status": "warning",
+                        "namespace": {
                             "status": "warning",
-                            "namespace": {
-                                "status": "warning",
-                            },
-                        }
+                        },
                     },
                 },
             ],
@@ -68,14 +62,13 @@ from azext_edge.edge.providers.edge_api import (
                 {
                     "name": "akri",
                     "description": "Evaluate Akri",
+                    "target": "akri.sh/v0",
                     "status": "success",
-                    "targets": {
-                        "akri.sh/v0": {
+                    "checks": {
+                        "status": "success",
+                        "namespace": {
                             "status": "success",
-                            "namespace": {
-                                "status": "success",
-                            },
-                        }
+                        },
                     },
                 },
             ],
@@ -87,14 +80,13 @@ from azext_edge.edge.providers.edge_api import (
                 {
                     "name": "akri",
                     "description": "Evaluate Akri",
+                    "target": "akri.sh/v0",
                     "status": "warning",
-                    "targets": {
-                        "akri.sh/v0": {
+                    "checks": {
+                        "status": "warning",
+                        "namespace": {
                             "status": "warning",
-                            "namespace": {
-                                "status": "warning",
-                            },
-                        }
+                        },
                     },
                 },
             ],
@@ -111,14 +103,13 @@ from azext_edge.edge.providers.edge_api import (
                 {
                     "name": "deviceregistry",
                     "description": "Evaluate DeviceRegistry",
+                    "target": "deviceregistry.microsoft.com",
                     "status": "success",
-                    "targets": {
-                        "deviceregistry.microsoft.com": {
+                    "checks": {
+                        "status": "success",
+                        "namespace": {
                             "status": "success",
-                            "namespace": {
-                                "status": "success",
-                            },
-                        }
+                        },
                     },
                 },
             ],
@@ -130,14 +121,13 @@ from azext_edge.edge.providers.edge_api import (
                 {
                     "name": "deviceregistry",
                     "description": "Evaluate DeviceRegistry",
+                    "target": "deviceregistry.microsoft.com",
                     "status": "warning",
-                    "targets": {
-                        "deviceregistry.microsoft.com": {
+                    "checks": {
+                        "status": "warning",
+                        "namespace": {
                             "status": "warning",
-                            "namespace": {
-                                "status": "warning",
-                            },
-                        }
+                        },
                     },
                 },
             ],
@@ -154,14 +144,13 @@ from azext_edge.edge.providers.edge_api import (
                 {
                     "name": "opcua",
                     "description": "Evaluate OPCUA",
+                    "target": "opcua.iotoperations.azure.com",
                     "status": "success",
-                    "targets": {
-                        "opcua.iotoperations.azure.com": {
+                    "checks": {
+                        "status": "success",
+                        "namespace": {
                             "status": "success",
-                            "namespace": {
-                                "status": "success",
-                            },
-                        }
+                        },
                     },
                 },
             ],
@@ -173,14 +162,13 @@ from azext_edge.edge.providers.edge_api import (
                 {
                     "name": "opcua",
                     "description": "Evaluate OPCUA",
+                    "target": "opcua.iotoperations.azure.com",
                     "status": "warning",
-                    "targets": {
-                        "opcua.iotoperations.azure.com": {
+                    "checks": {
+                        "status": "warning",
+                        "namespace": {
                             "status": "warning",
-                            "namespace": {
-                                "status": "warning",
-                            },
-                        }
+                        },
                     },
                 },
             ],
@@ -197,14 +185,13 @@ from azext_edge.edge.providers.edge_api import (
                 {
                     "name": "dataflow",
                     "description": "Evaluate Dataflow",
+                    "target": "dataflow.microsoft.com",
                     "status": "success",
-                    "targets": {
-                        "dataflow.microsoft.com": {
+                    "checks": {
+                        "status": "success",
+                        "namespace": {
                             "status": "success",
-                            "namespace": {
-                                "status": "success",
-                            },
-                        }
+                        },
                     },
                 },
             ],
@@ -216,14 +203,13 @@ from azext_edge.edge.providers.edge_api import (
                 {
                     "name": "dataflow",
                     "description": "Evaluate Dataflow",
+                    "target": "dataflow.microsoft.com",
                     "status": "error",
-                    "targets": {
-                        "dataflow.microsoft.com": {
+                    "checks": {
+                        "status": "warning",
+                        "namespace": {
                             "status": "warning",
-                            "namespace": {
-                                "status": "warning",
-                            },
-                        }
+                        },
                     },
                 },
             ],
@@ -278,7 +264,7 @@ def test_summary_checks(
         ("OPCUA", opcua_status),
         (DATAFLOW_API_V1.as_str(), dataflow_status),
     ]:
-        assert service in result["postDeployment"][0]["targets"]
+        assert service in result["postDeployment"][0]["checks"]
         assert result["postDeployment"][0]["targets"][service]["_all_"]["status"] == status
 
 

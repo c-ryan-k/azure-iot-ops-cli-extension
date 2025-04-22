@@ -6,9 +6,9 @@
 
 
 import pytest
-from azext_edge.edge.common import (
-    ResourceState,
-)
+
+from azext_edge.edge.common import ResourceState
+from azext_edge.edge.providers.check.common import ResourceOutputDetailLevel
 from azext_edge.edge.providers.check.mq import (
     evaluate_broker_authentications,
     evaluate_broker_authorizations,
@@ -16,17 +16,9 @@ from azext_edge.edge.providers.check.mq import (
     evaluate_brokers,
 )
 from azext_edge.edge.providers.edge_api.mq import MqResourceKinds
-from azext_edge.edge.providers.check.common import (
-    ResourceOutputDetailLevel,
-)
 
-from .conftest import (
-    assert_check_by_resource_types,
-    assert_conditions,
-    assert_evaluations,
-    generate_resource_stub,
-)
 from ...generators import generate_random_string
+from .conftest import assert_check_by_resource_types, assert_conditions, assert_evaluations, generate_resource_stub
 
 
 @pytest.mark.parametrize(
@@ -295,8 +287,9 @@ def test_broker_checks(
 
     # all evalBroker assertions
     assert result["name"] == "evalBrokers"
-    assert namespace in result["targets"]["brokers.mqttbroker.iotoperations.azure.com"]
-    target = result["targets"]["brokers.mqttbroker.iotoperations.azure.com"][namespace]
+    assert result["target"] == "brokers.mqttbroker.iotoperations.azure.com"
+    assert namespace in result["checks"]
+    target = result["checks"][namespace]
 
     assert_conditions(target, conditions)
     assert_evaluations(target, evaluations)
@@ -542,8 +535,11 @@ def test_broker_listener_checks(
     assert result["name"] == "evalBrokerListeners"
 
     # check listener target
-    assert namespace in result["targets"]["brokerlisteners.mqttbroker.iotoperations.azure.com"]
-    target = result["targets"]["brokerlisteners.mqttbroker.iotoperations.azure.com"][namespace]
+    assert result["target"] == "brokerlisteners.mqttbroker.iotoperations.azure.com"
+    assert namespace in result["checks"]
+    target = result["checks"][namespace]
+    import pdb
+    pdb.set_trace()
 
     # conditions
     assert_conditions(target, listener_conditions)
@@ -551,8 +547,9 @@ def test_broker_listener_checks(
 
     # check service target
     service_name = listener["spec"]["serviceName"]
-    assert namespace in result["targets"][f"service/{service_name}"]
-    target = result["targets"][f"service/{service_name}"][namespace]
+    assert namespace in result["checks"]
+    assert service_name in result["checks"][namespace]
+    target = result["checks"][namespace][f"service/{service_name}"]
 
     # conditions
     assert_conditions(target, service_conditions)
@@ -982,10 +979,11 @@ def test_broker_authentication_checks(
     result = evaluate_broker_authentications(detail_level=detail_level, resource_name=resource_name)
 
     assert result["name"] == "evalBrokerAuthentications"
+    assert result["target"] == "brokerauthentications.mqttbroker.iotoperations.azure.com"
 
     # check listener target
-    assert namespace in result["targets"]["brokerauthentications.mqttbroker.iotoperations.azure.com"]
-    target = result["targets"]["brokerauthentications.mqttbroker.iotoperations.azure.com"][namespace]
+    assert namespace in result["checks"]
+    target = result["checks"][namespace]
 
     # conditions
     assert_conditions(target, conditions)
@@ -1147,10 +1145,11 @@ def test_broker_authorization_checks(
     result = evaluate_broker_authorizations(detail_level=detail_level, resource_name=resource_name)
 
     assert result["name"] == "evalBrokerAuthorizations"
+    assert result["target"] == "brokerauthentications.mqttbroker.iotoperations.azure.com"
 
     # check listener target
-    assert namespace in result["targets"]["brokerauthorizations.mqttbroker.iotoperations.azure.com"]
-    target = result["targets"]["brokerauthorizations.mqttbroker.iotoperations.azure.com"][namespace]
+    assert namespace in result["checks"]
+    target = result["checks"][namespace]
 
     # conditions
     assert_conditions(target, conditions)

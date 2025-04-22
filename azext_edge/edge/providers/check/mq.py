@@ -892,7 +892,7 @@ def _evaluate_broker_reference(
         display=Padding(f"{display_text} {ref_display}", (0, 0, 0, padding)),
     )
 
-
+#  TODO - this needs its own check manager, move service out of listener check, or else re-add all the targets
 def _evaluate_listener_service(
     check_manager: CheckManager,
     listener_spec: dict,
