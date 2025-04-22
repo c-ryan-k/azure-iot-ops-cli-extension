@@ -15,7 +15,12 @@ def test_check_manager():
     name = generate_random_string()
     desc = f"{generate_random_string()} {generate_random_string()}"
     namespace = generate_random_string()
-    check_manager = CheckManager(check_name=name, check_desc=desc)
+    target_1 = generate_random_string()
+    target_1_condition_1 = generate_random_string()
+    target_1_conditions = [target_1_condition_1]
+    target_1_eval_1_value = {generate_random_string(): generate_random_string()}
+    target_1_display_1 = generate_random_string()
+    check_manager = CheckManager(check_name=name, check_desc=desc, target=target_1)
     assert_check_manager_dict(
         check_manager=check_manager,
         expected_name=name,
@@ -24,20 +29,13 @@ def test_check_manager():
         expected_status=CheckTaskStatus.skipped.value,
     )
 
-    target_1 = generate_random_string()
-    target_1_condition_1 = generate_random_string()
-    target_1_conditions = [target_1_condition_1]
-    target_1_eval_1_value = {generate_random_string(): generate_random_string()}
-    target_1_display_1 = generate_random_string()
-
-    check_manager.add_target(target_name=target_1, namespace=namespace, conditions=target_1_conditions)
-    check_manager.add_target_eval(
-        target_name=target_1,
+    check_manager.add_check(namespace=namespace, conditions=target_1_conditions)
+    check_manager.add_check_eval(
         namespace=namespace,
         status=CheckTaskStatus.success.value,
         value=target_1_eval_1_value,
     )
-    check_manager.add_display(target_name=target_1, namespace=namespace, display=target_1_display_1)
+    check_manager.add_display(namespace=namespace, display=target_1_display_1)
     expected_targets = {
         target_1: {
             "conditions": target_1_conditions,
@@ -58,7 +56,7 @@ def test_check_manager():
         expected_targets=expected_targets,
         expected_target_displays={target_1: [target_1_display_1]},
     )
-    check_manager.add_target_eval(target_name=target_1, namespace=namespace, status=CheckTaskStatus.warning.value)
+    check_manager.add_check_eval(namespace=namespace, status=CheckTaskStatus.warning.value)
     expected_targets = {
         target_1: {
             "conditions": target_1_conditions,
@@ -81,45 +79,10 @@ def test_check_manager():
         expected_status=CheckTaskStatus.warning.value,
     )
 
-    target_2 = generate_random_string()
-    target_2_condition_1 = generate_random_string()
-    target_2_conditions = [target_2_condition_1]
-    check_manager.add_target(target_name=target_2, namespace=namespace, conditions=target_2_conditions)
-    check_manager.add_target_eval(target_name=target_2, namespace=namespace, status=CheckTaskStatus.error.value)
-
-    expected_targets = {
-        target_1: {
-            "conditions": target_1_conditions,
-            "evaluations": [
-                {
-                    "status": CheckTaskStatus.success.value,
-                    "value": target_1_eval_1_value,
-                },
-                {"status": CheckTaskStatus.warning.value},
-            ],
-            "status": CheckTaskStatus.warning.value,
-        },
-        target_2: {
-            "conditions": target_2_conditions,
-            "evaluations": [{"status": CheckTaskStatus.error.value}],
-            "status": CheckTaskStatus.error.value,
-        },
-    }
-    assert_check_manager_dict(
-        check_manager=check_manager,
-        expected_name=name,
-        expected_namespace=namespace,
-        expected_desc=desc,
-        expected_targets=expected_targets,
-        expected_status=CheckTaskStatus.error.value,
-    )
-
     # Re-create check manager with target 1 kpis and assert skipped status
-    check_manager = CheckManager(check_name=name, check_desc=desc)
-    check_manager.add_target(target_name=target_1, namespace=namespace, conditions=target_1_conditions)
-    check_manager.add_target_eval(
-        target_name=target_1, namespace=namespace, status=CheckTaskStatus.skipped.value, value=None
-    )
+    check_manager = CheckManager(check_name=name, check_desc=desc, target=target_1)
+    check_manager.add_check(namespace=namespace, conditions=target_1_conditions)
+    check_manager.add_check_eval(namespace=namespace, status=CheckTaskStatus.skipped.value, value=None)
     expected_targets = {
         target_1: {
             "conditions": target_1_conditions,

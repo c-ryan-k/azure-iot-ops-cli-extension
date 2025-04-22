@@ -20,13 +20,11 @@ from ....generators import generate_random_string
 @pytest.mark.parametrize("padding", [(0, 0, 0, 8), (3, 5, 2, 9)])
 def test_add_display_and_eval(mocked_check_manager, resource_name, namespace, padding):
     from azext_edge.edge.providers.check.base import add_display_and_eval
-    target_name = generate_random_string()
     display_text = generate_random_string()
     eval_status = generate_random_string()
     eval_value = generate_random_string()
     add_display_and_eval(
         check_manager=mocked_check_manager,
-        target_name=target_name,
         display_text=display_text,
         eval_status=eval_status,
         eval_value=eval_value,
@@ -35,7 +33,6 @@ def test_add_display_and_eval(mocked_check_manager, resource_name, namespace, pa
         padding=padding
     )
     kwargs = mocked_check_manager.add_display.call_args.kwargs
-    assert kwargs["target_name"] == target_name
     assert kwargs["namespace"] == namespace
     assert kwargs["display"].renderable == display_text
     assert (
@@ -45,8 +42,7 @@ def test_add_display_and_eval(mocked_check_manager, resource_name, namespace, pa
         kwargs["display"].left
     ) == padding
 
-    mocked_check_manager.add_target_eval.assert_called_once_with(
-        target_name=target_name,
+    mocked_check_manager.add_check_eval.assert_called_once_with(
         namespace=namespace,
         status=eval_status,
         value=eval_value,
@@ -58,9 +54,8 @@ def test_add_display_and_eval(mocked_check_manager, resource_name, namespace, pa
 @pytest.mark.parametrize("value", ["Null", "", "None", "NoError", "Everything is ok~", 100])
 def test_process_value_color(mocked_check_manager, key, value):
     from azext_edge.edge.providers.check.base.display import process_value_color
-    target_name = generate_random_string()
     result = process_value_color(
-        check_manager=mocked_check_manager, target_name=target_name, key=key, value=value
+        check_manager=mocked_check_manager, key=key, value=value
     )
     if not value:
         value = "N/A"
@@ -71,8 +66,7 @@ def test_process_value_color(mocked_check_manager, key, value):
         str(value).lower() not in ["null", "n/a", "none", "noerror"]
     ]):
         assert result.startswith("[red]")
-        mocked_check_manager.set_target_status.assert_called_once_with(
-            target_name=target_name,
+        mocked_check_manager.set_check_status.assert_called_once_with(
             status=CheckTaskStatus.error.value
         )
     else:

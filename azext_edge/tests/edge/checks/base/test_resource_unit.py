@@ -193,9 +193,7 @@ def test_generate_target_resource_name(api_info, resource_kind, expected_name):
         ),
     ],
 )
-def test_get_resources_by_name(
-    mocker, kind, resource_name, namespace, returned_resources, expected_filtered_resources
-):
+def test_get_resources_by_name(mocker, kind, resource_name, namespace, returned_resources, expected_filtered_resources):
     # Set up the mock
     api_info_patch = mocker.patch("azext_edge.edge.providers.edge_api.EdgeResourceApi")
     api_info_patch.get_resources.return_value = {"items": returned_resources}
@@ -242,17 +240,14 @@ def test_get_resource_metadata_property(resource, prop_name, expected_value):
             None,
             [
                 {
-                    "target_name": "test_target",
                     "namespace": "test_namespace",
                     "displayText": "key1: [cyan]value1[/cyan]",
                 },
                 {
-                    "target_name": "test_target",
                     "namespace": "test_namespace",
                     "displayText": "key2:",
                 },
                 {
-                    "target_name": "test_target",
                     "namespace": "test_namespace",
                     "displayText": "nested_key: [cyan]nested_value[/cyan]",
                 },
@@ -263,12 +258,10 @@ def test_get_resource_metadata_property(resource, prop_name, expected_value):
             None,
             [
                 {
-                    "target_name": "test_target",
                     "namespace": "test_namespace",
                     "displayText": "key1: ",
                 },
                 {
-                    "target_name": "test_target",
                     "namespace": "test_namespace",
                     "displayText": f"[cyan]{'a' * 51}[/cyan]",
                 },
@@ -279,7 +272,6 @@ def test_get_resource_metadata_property(resource, prop_name, expected_value):
             None,
             [
                 {
-                    "target_name": "test_target",
                     "namespace": "test_namespace",
                     "displayText": "list_key:",
                 },
@@ -290,7 +282,6 @@ def test_get_resource_metadata_property(resource, prop_name, expected_value):
             "test_prop",
             [
                 {
-                    "target_name": "test_target",
                     "namespace": "test_namespace",
                     "displayText": "test_prop:",
                 },
@@ -305,7 +296,6 @@ def test_process_dict_resource(mocker, mocked_check_manager, resource, prop_name
     )
     process_dict_resource(
         check_manager=mocked_check_manager,
-        target_name="test_target",
         resource=resource,
         namespace="test_namespace",
         padding=0,
@@ -315,7 +305,6 @@ def test_process_dict_resource(mocker, mocked_check_manager, resource, prop_name
     # Verify the expected calls to check_manager.add_display
     call_args_list = mocked_check_manager.add_display.call_args_list
     for call_args, expected in zip(call_args_list, expected_calls):
-        assert call_args.kwargs["target_name"] == expected["target_name"]
         assert call_args.kwargs["namespace"] == expected["namespace"]
         assert call_args.kwargs["display"].renderable == expected["displayText"]
 
@@ -332,12 +321,10 @@ def test_process_dict_resource(mocker, mocked_check_manager, resource, prop_name
             [{"name": "item1"}, {"name": "item2"}],
             [
                 {
-                    "target_name": "test_target",
                     "namespace": "test_namespace",
                     "displayText": "- name: [cyan]item1[/cyan]",
                 },
                 {
-                    "target_name": "test_target",
                     "namespace": "test_namespace",
                     "displayText": "- name: [cyan]item2[/cyan]",
                 },
@@ -347,13 +334,11 @@ def test_process_dict_resource(mocker, mocked_check_manager, resource, prop_name
             [{"name": "item1"}, "string_item2"],
             [
                 {
-                    "target_name": "test_target",
                     "namespace": "test_namespace",
                     "displayText": "- name: [cyan]item1[/cyan]",
                 },
-                {"target_name": "test_target", "namespace": "test_namespace", "displayText": "- item 2"},
+                {"namespace": "test_namespace", "displayText": "- item 2"},
                 {
-                    "target_name": "test_target",
                     "namespace": "test_namespace",
                     "displayText": "[cyan]string_item2[/cyan]",
                 },
@@ -362,9 +347,8 @@ def test_process_dict_resource(mocker, mocked_check_manager, resource, prop_name
         (
             [{"nested_dict": {"name": "nested_item"}}, {"name": "item2"}],
             [
-                {"target_name": "test_target", "namespace": "test_namespace", "displayText": "- item 1"},
+                {"namespace": "test_namespace", "displayText": "- item 1"},
                 {
-                    "target_name": "test_target",
                     "namespace": "test_namespace",
                     "displayText": "- name: [cyan]item2[/cyan]",
                 },
@@ -373,15 +357,13 @@ def test_process_dict_resource(mocker, mocked_check_manager, resource, prop_name
         (
             ["string_item1", "string_item2"],
             [
-                {"target_name": "test_target", "namespace": "test_namespace", "displayText": "- item 1"},
+                {"namespace": "test_namespace", "displayText": "- item 1"},
                 {
-                    "target_name": "test_target",
                     "namespace": "test_namespace",
                     "displayText": "[cyan]string_item1[/cyan]",
                 },
-                {"target_name": "test_target", "namespace": "test_namespace", "displayText": "- item 2"},
+                {"namespace": "test_namespace", "displayText": "- item 2"},
                 {
-                    "target_name": "test_target",
                     "namespace": "test_namespace",
                     "displayText": "[cyan]string_item2[/cyan]",
                 },
@@ -397,7 +379,6 @@ def test_process_list_resource(mocker, mocked_check_manager, resource, expected_
     # Call the function being tested
     process_list_resource(
         check_manager=mocked_check_manager,
-        target_name="test_target",
         resource=resource,
         namespace="test_namespace",
         padding=0,
@@ -406,7 +387,6 @@ def test_process_list_resource(mocker, mocked_check_manager, resource, expected_
     # Verify the expected calls to check_manager.add_display
     call_args_list = mocked_check_manager.add_display.call_args_list
     for call_args, expected in zip(call_args_list, expected_calls):
-        assert call_args.kwargs["target_name"] == expected["target_name"]
         assert call_args.kwargs["namespace"] == expected["namespace"]
         assert call_args.kwargs["display"].renderable == expected["displayText"]
 
@@ -453,14 +433,12 @@ def test_decorate_resource_status(status, expected_status_text):
             [("key1", "Display Name 1", False), ("descriptor", "Descriptor", True)],
             [
                 {
-                    "target_name": "test_target",
                     "properties": "value1",
                     "display_name": "Display Name 1",
                     "namespace": "test_namespace",
                     "padding": (0, 0, 0, 0),
                 },
                 {
-                    "target_name": "test_target",
                     "properties": "detailed_description",
                     "display_name": "Descriptor",
                     "namespace": "test_namespace",
@@ -474,7 +452,6 @@ def test_decorate_resource_status(status, expected_status_text):
             [("key1", "Display Name 1", False), ("descriptor", "Descriptor", True)],
             [
                 {
-                    "target_name": "test_target",
                     "properties": "value1",
                     "display_name": "Display Name 1",
                     "namespace": "test_namespace",
@@ -488,7 +465,6 @@ def test_decorate_resource_status(status, expected_status_text):
             [("nested.key2", "Nested Display Name 2", False)],
             [
                 {
-                    "target_name": "test_target",
                     "properties": "nested_value2",
                     "display_name": "Nested Display Name 2",
                     "namespace": "test_namespace",
@@ -515,7 +491,6 @@ def test_process_resource_properties(
     process_resource_properties(
         check_manager=mocked_check_manager,
         detail_level=detail_level,
-        target_name="test_target",
         prop_value=prop_value,
         properties=properties,
         namespace="test_namespace",
@@ -526,7 +501,6 @@ def test_process_resource_properties(
     call_args_list = mock_process_resource_property.call_args_list
     for call_args, expected in zip(call_args_list, expected_calls):
         kwargs = call_args.kwargs
-        assert kwargs["target_name"] == expected["target_name"]
         assert kwargs["properties"] == expected["properties"]
         assert kwargs["display_name"] == expected["display_name"]
         assert kwargs["namespace"] == expected["namespace"]
@@ -543,27 +517,22 @@ def test_process_resource_properties(
             (0, 0, 0, 0),
             [
                 {
-                    "target_name": "test_target",
                     "namespace": "test_namespace",
                     "displayText": "Test List:",
                 },
                 {
-                    "target_name": "test_target",
                     "namespace": "test_namespace",
                     "displayText": "- Test List 1",
                 },
                 {
-                    "target_name": "test_target",
                     "namespace": "test_namespace",
                     "displayText": "prop1: [cyan]value1[/cyan]",
                 },
                 {
-                    "target_name": "test_target",
                     "namespace": "test_namespace",
                     "displayText": "- Test List 2",
                 },
                 {
-                    "target_name": "test_target",
                     "namespace": "test_namespace",
                     "displayText": "prop2: [cyan]value2[/cyan]",
                 },
@@ -576,7 +545,6 @@ def test_process_resource_properties(
             (0, 0, 0, 0),
             [
                 {
-                    "target_name": "test_target",
                     "namespace": "test_namespace",
                     "displayText": "Test String: [cyan]short_string[/cyan]",
                 },
@@ -589,12 +557,10 @@ def test_process_resource_properties(
             (0, 0, 0, 0),
             [
                 {
-                    "target_name": "test_target",
                     "namespace": "test_namespace",
                     "displayText": "Long String:",
                 },
                 {
-                    "target_name": "test_target",
                     "namespace": "test_namespace",
                     "displayText": "[cyan]aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa[/cyan]",
                 },
@@ -607,7 +573,6 @@ def test_process_resource_properties(
             (0, 0, 0, 0),
             [
                 {
-                    "target_name": "test_target",
                     "namespace": "test_namespace",
                     "displayText": "Test Bool: [cyan]True[/cyan]",
                 },
@@ -620,7 +585,6 @@ def test_process_resource_properties(
             (0, 0, 0, 0),
             [
                 {
-                    "target_name": "test_target",
                     "namespace": "test_namespace",
                     "displayText": "Test Int: [cyan]123[/cyan]",
                 },
@@ -633,17 +597,14 @@ def test_process_resource_properties(
             (0, 0, 0, 0),
             [
                 {
-                    "target_name": "test_target",
                     "namespace": "test_namespace",
                     "displayText": "Test Dict:",
                 },
                 {
-                    "target_name": "test_target",
                     "namespace": "test_namespace",
                     "displayText": "key1: [cyan]value1[/cyan]",
                 },
                 {
-                    "target_name": "test_target",
                     "namespace": "test_namespace",
                     "displayText": "key2: [cyan]value2[/cyan]",
                 },
@@ -655,7 +616,6 @@ def test_process_resource_property_by_type(mocked_check_manager, properties, dis
     # Call the function being tested
     process_resource_property_by_type(
         check_manager=mocked_check_manager,
-        target_name="test_target",
         properties=properties,
         display_name=display_name,
         namespace="test_namespace",
@@ -666,7 +626,6 @@ def test_process_resource_property_by_type(mocked_check_manager, properties, dis
     call_args_list = mocked_check_manager.add_display.call_args_list
     for call_args, expected in zip(call_args_list, expected_calls):
         actual_call = call_args[1]  # call_args[1] contains the kwargs
-        assert actual_call["target_name"] == expected["target_name"]
         assert actual_call["namespace"] == expected["namespace"]
         assert actual_call["display"].renderable == expected["displayText"]
 
@@ -679,14 +638,12 @@ def test_process_resource_property_by_type(mocked_check_manager, properties, dis
             [],
             [
                 call(
-                    target_name="test_target",
                     namespace="test_namespace",
                     conditions=["oneOf('cond1', 'cond2')"],
                 ),
             ],
             [
                 call(
-                    target_name="test_target",
                     namespace="test_namespace",
                     status=CheckTaskStatus.success.value,
                     value={"eval_key": "eval_value"},
@@ -698,21 +655,18 @@ def test_process_resource_property_by_type(mocked_check_manager, properties, dis
             [("cond1", False), ("cond2", False)],
             [
                 {
-                    "target_name": "test_target",
                     "namespace": "test_namespace",
                     "displayText": "One of 'cond1', 'cond2' should be specified",
                 },
             ],
             [
                 call(
-                    target_name="test_target",
                     namespace="test_namespace",
                     conditions=["oneOf('cond1', 'cond2')"],
                 ),
             ],
             [
                 call(
-                    target_name="test_target",
                     namespace="test_namespace",
                     status=CheckTaskStatus.error.value,
                     value={"eval_key": "eval_value"},
@@ -724,21 +678,18 @@ def test_process_resource_property_by_type(mocked_check_manager, properties, dis
             [("cond1", True), ("cond2", True)],
             [
                 {
-                    "target_name": "test_target",
                     "namespace": "test_namespace",
                     "displayText": "Only one of 'cond1', 'cond2' should be specified",
                 },
             ],
             [
                 call(
-                    target_name="test_target",
                     namespace="test_namespace",
                     conditions=["oneOf('cond1', 'cond2')"],
                 ),
             ],
             [
                 call(
-                    target_name="test_target",
                     namespace="test_namespace",
                     status=CheckTaskStatus.error.value,
                     value={"eval_key": "eval_value"},
@@ -763,7 +714,6 @@ def test_validate_one_of_conditions(
         check_manager=mocked_check_manager,
         eval_value={"eval_key": "eval_value"},
         namespace="test_namespace",
-        target_name="test_target",
         padding=4,
         resource_name="test_resource",
     )
@@ -771,15 +721,14 @@ def test_validate_one_of_conditions(
     # Verify the expected calls to check_manager.add_display
     display_call_args_list = mocked_check_manager.add_display.call_args_list
     for call_args, expected in zip(display_call_args_list, expected_display_calls):
-        assert call_args.kwargs["target_name"] == expected["target_name"]
         assert call_args.kwargs["namespace"] == expected["namespace"]
         assert call_args.kwargs["display"].renderable == expected["displayText"]
 
-    # Verify the expected calls to check_manager.add_target_conditions
-    assert mocked_check_manager.add_target_conditions.call_args_list == expected_conditions_calls
+    # Verify the expected calls to check_manager.add_conditions
+    assert mocked_check_manager.add_conditions.call_args_list == expected_conditions_calls
 
-    # Verify the expected calls to check_manager.add_target_eval
-    assert mocked_check_manager.add_target_eval.call_args_list == expected_eval_calls
+    # Verify the expected calls to check_manager.add_check_eval
+    assert mocked_check_manager.add_check_eval.call_args_list == expected_eval_calls
 
 
 @pytest.mark.parametrize(
@@ -829,10 +778,9 @@ def test_calculate_status(resource_state, expected_status):
             },
             ResourceOutputDetailLevel.summary.value,
             ["Status {[green]success[/green]}."],
-            [call(target_name="test_target", namespace="test_namespace", conditions=["status"])],
+            [call(namespace="test_namespace", conditions=["status"])],
             [
                 call(
-                    target_name="test_target",
                     namespace="test_namespace",
                     status="success",
                     value={
@@ -850,10 +798,9 @@ def test_calculate_status(resource_state, expected_status):
             {"runtimeStatus": {}, "provisioningStatus": {}},
             ResourceOutputDetailLevel.summary.value,
             ["Status [red]not found[/red]."],
-            [call(target_name="test_target", namespace="test_namespace", conditions=["status"])],
+            [call(namespace="test_namespace", conditions=["status"])],
             [
                 call(
-                    target_name="test_target",
                     namespace="test_namespace",
                     status=CheckTaskStatus.error.value,
                     value={"status": {"runtimeStatus": {}, "provisioningStatus": {}}},
@@ -873,10 +820,9 @@ def test_calculate_status(resource_state, expected_status):
                 "Provisioning Status {[green]Success[/green]}.",
                 "Runtime Status {[green]Running[/green]}, [cyan]All good[/cyan].",
             ],
-            [call(target_name="test_target", namespace="test_namespace", conditions=["status"])],
+            [call(namespace="test_namespace", conditions=["status"])],
             [
                 call(
-                    target_name="test_target",
                     namespace="test_namespace",
                     status="success",
                     value={
@@ -910,7 +856,6 @@ def test_process_custom_resource_status(
     process_custom_resource_status(
         check_manager=mocked_check_manager,
         status=status,
-        target_name="test_target",
         namespace="test_namespace",
         resource_name="test_resource",
         padding=5,
@@ -922,11 +867,11 @@ def test_process_custom_resource_status(
     for call_args, expected_text in zip(display_call_args_list, expected_display_texts):
         assert call_args.kwargs["display"].renderable == expected_text
 
-    # Verify the expected calls to add_target_conditions
-    assert mocked_check_manager.add_target_conditions.call_args_list == expected_conditions_calls
+    # Verify the expected calls to add_conditions
+    assert mocked_check_manager.add_conditions.call_args_list == expected_conditions_calls
 
-    # Verify the expected calls to add_target_eval
-    assert mocked_check_manager.add_target_eval.call_args_list == expected_eval_calls
+    # Verify the expected calls to add_check_eval
+    assert mocked_check_manager.add_check_eval.call_args_list == expected_eval_calls
 
 
 @pytest.mark.parametrize(

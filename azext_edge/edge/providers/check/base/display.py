@@ -4,40 +4,30 @@
 # Licensed under the MIT License. See License file in the project root for license information.
 # ----------------------------------------------------------------------------------------------
 
+from typing import Any, Dict, List, Optional, Tuple
+
 from knack.log import get_logger
 from rich.console import Console, NewLine
 from rich.padding import Padding
-from typing import Any, Dict, List, Optional, Tuple
 
-from .check_manager import CheckManager
-from ..common import ALL_NAMESPACES_TARGET, COLOR_STR_FORMAT, DEFAULT_PADDING, DEFAULT_PROPERTY_DISPLAY_COLOR
 from ....common import CheckTaskStatus
+from ..common import ALL_NAMESPACES_TARGET, COLOR_STR_FORMAT, DEFAULT_PADDING, DEFAULT_PROPERTY_DISPLAY_COLOR
+from .check_manager import CheckManager
 
 logger = get_logger(__name__)
 
 
 def add_display_and_eval(
     check_manager: CheckManager,
-    target_name: str,
     display_text: str,
     eval_status: str,
     eval_value: str,
     resource_name: Optional[str] = None,
     namespace: str = ALL_NAMESPACES_TARGET,
-    padding: Tuple[int, int, int, int] = (0, 0, 0, 8)
+    padding: Tuple[int, int, int, int] = (0, 0, 0, 8),
 ) -> None:
-    check_manager.add_display(
-        target_name=target_name,
-        namespace=namespace,
-        display=Padding(display_text, padding)
-    )
-    check_manager.add_target_eval(
-        target_name=target_name,
-        namespace=namespace,
-        status=eval_status,
-        value=eval_value,
-        resource_name=resource_name
-    )
+    check_manager.add_display(namespace=namespace, display=Padding(display_text, padding))
+    check_manager.add_check_eval(namespace=namespace, status=eval_status, value=eval_value, resource_name=resource_name)
 
 
 # TODO: test + refactor
@@ -75,31 +65,32 @@ def display_as_list(console: Console, result: Dict[str, Any]) -> None:
         console.print(Panel(content, title="Check Summary", expand=False))
 
     def _enumerate_displays(checks: List[Dict[str, dict]]) -> None:
+        # todo - hack to get summary check to display correctly
+        is_summary = checks[0].get("name") == "evalAIOSummary"
         for check in checks:
             status = check.get("status")
             prefix_emoji = _get_emoji_from_status(status)
             console.print(Padding(f"{prefix_emoji} {check['description']}", (0, 0, 0, 4)))
 
-            targets = check.get("targets", {})
-            for type in targets:
-                for namespace in targets[type]:
-                    namespace_target = targets[type][namespace]
-                    displays = namespace_target.get("displays", [])
-                    status = namespace_target.get("status")
-                    for (idx, disp) in enumerate(displays):
-                        # display status indicator on each 'namespaced' grouping of displays
-                        if all([idx == 0, status]):
-                            prefix_emoji = _get_emoji_from_status(status)
-                            console.print(Padding(f"\n{prefix_emoji} {disp.renderable}", (0, 0, 0, 6)))
-                        else:
-                            console.print(disp)
-                    target_status = targets[type][namespace].get("status")
-                    evaluations = targets[type][namespace].get("evaluations", [])
-                    if not evaluations:
-                        _increment_summary(target_status)
-                    for e in evaluations:
-                        eval_status = e.get("status")
-                        _increment_summary(eval_status)
+            check_results = check.get("checks", {})
+            for namespace in check_results:
+                namespace_target = check_results[namespace]
+                displays = namespace_target.get("displays", [])
+                status = namespace_target.get("status")
+                for idx, disp in enumerate(displays):
+                    # display status indicator on each 'namespaced' grouping of displays
+                    if (is_summary and idx % 2 == 0) or (not is_summary and idx == 0):
+                        prefix_emoji = _get_emoji_from_status(status)
+                        console.print(Padding(f"\n{prefix_emoji} {disp.renderable}", (0, 0, 0, 6)))
+                    else:
+                        console.print(disp)
+                target_status = check_results[namespace].get("status")
+                evaluations = check_results[namespace].get("evaluations", [])
+                if not evaluations:
+                    _increment_summary(target_status)
+                for e in evaluations:
+                    eval_status = e.get("status")
+                    _increment_summary(eval_status)
             console.print(NewLine(1))
         console.print(NewLine(1))
 
@@ -130,16 +121,12 @@ def _get_emoji_from_status(status: str) -> str:
 
 def process_value_color(
     check_manager: CheckManager,
-    target_name: str,
     key: Any,
     value: Any,
 ) -> str:
     value = value if value else "N/A"
     if "error" in str(key).lower() and str(value).lower() not in ["null", "n/a", "none", "noerror"]:
-        check_manager.set_target_status(
-            target_name=target_name,
-            status=CheckTaskStatus.error.value
-        )
+        check_manager.set_check_status(status=CheckTaskStatus.error.value)
         return f"[red]{value}[/red]"
     return f"[cyan]{value}[/cyan]"
 
@@ -153,10 +140,7 @@ def basic_property_display(
     label: str,
     value: str,
     color: Optional[str] = DEFAULT_PROPERTY_DISPLAY_COLOR,
-    padding: Optional[int] = DEFAULT_PADDING
+    padding: Optional[int] = DEFAULT_PADDING,
 ) -> Padding:
     padding = padding or DEFAULT_PADDING
-    return Padding(
-        f"{label}: {colorize_string(value=value, color=color)}",
-        (0, 0, 0, padding)
-    )
+    return Padding(f"{label}: {colorize_string(value=value, color=color)}", (0, 0, 0, padding))

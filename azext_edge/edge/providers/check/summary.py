@@ -6,9 +6,9 @@
 
 from typing import List, NamedTuple
 
+from rich.console import NewLine
 from rich.padding import Padding
 from rich.table import Table
-from rich.console import NewLine
 
 from ...common import OPCUA_SERVICE, CheckTaskStatus, OpsServiceType
 from ...providers.edge_api import DATAFLOW_API_V1, DEVICEREGISTRY_API_V1, MQ_ACTIVE_API
@@ -69,7 +69,7 @@ def check_summary(
         ),
     ]
 
-    check_manager = CheckManager(check_name="evalAIOSummary", check_desc="Service summary checks")
+    check_manager = CheckManager(check_name="evalAIOSummary", check_desc="Service summary checks", target="summary")
     for check in service_checks:
 
         # run checks for service
@@ -81,10 +81,8 @@ def check_summary(
         )
 
         # add service check results to check manager
-        target = check.target
-        check_manager.add_target(target_name=target)
+        check_manager.add_check()
         check_manager.add_display(
-            target_name=target,
             display=Padding(
                 check.title,
                 (0, 0, 0, PADDING),
@@ -104,8 +102,7 @@ def check_summary(
             emoji = status_obj.emoji
             color = status_obj.color
             description = obj.get("description")
-            check_manager.add_target_eval(
-                target_name=target,
+            check_manager.add_check_eval(
                 status=status,
                 value={obj.get("name", "checkResult"): status},
             )
@@ -113,14 +110,14 @@ def check_summary(
             grid.add_row(colorize_string(value=emoji, color=color), description)
 
         # display grid
-        check_manager.add_display(target_name=target, display=Padding(grid, (0, 0, 0, PADDING)))
+        check_manager.add_display(display=Padding(grid, (0, 0, 0, PADDING)))
 
         # service check suggestion footer
         if add_footer:
             footer = ":magnifying_glass_tilted_left:" + colorize_string(
                 f" See details by running: az iot ops check --svc {check.svc}"
             )
-            check_manager.add_display(target_name=target, display=NewLine())
-            check_manager.add_display(target_name=target, display=Padding(footer, (0, 0, 0, PADDING)))
+            check_manager.add_display(display=NewLine())
+            check_manager.add_display(display=Padding(footer, (0, 0, 0, PADDING)))
 
     return check_manager.as_dict(as_list=as_list)

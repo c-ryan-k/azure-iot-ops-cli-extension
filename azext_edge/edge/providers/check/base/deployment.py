@@ -90,9 +90,8 @@ def _check_k8s_version(as_list: bool = False) -> Dict[str, Any]:
     version_client = client.VersionApi()
 
     target_k8s_version = "k8s"
-    check_manager = CheckManager(check_name="evalK8sVers", check_desc="Evaluate Kubernetes server")
-    check_manager.add_target(
-        target_name=target_k8s_version,
+    check_manager = CheckManager(check_name="evalK8sVers", check_desc="Evaluate Kubernetes server", target=target_k8s_version)
+    check_manager.add_check(
         conditions=[f"(k8s version)>={MIN_K8S_VERSION}"],
     )
 
@@ -103,13 +102,11 @@ def _check_k8s_version(as_list: bool = False) -> Dict[str, Any]:
     except (ApiException, ImportError) as ae:
         logger.debug(str(ae))
         api_error_text = UNABLE_TO_DETERMINE_VERSION_MSG
-        check_manager.add_target_eval(
-            target_name=target_k8s_version,
+        check_manager.add_check_eval(
             status=CheckTaskStatus.error.value,
             value=api_error_text,
         )
         check_manager.add_display(
-            target_name=target_k8s_version,
             display=Padding(api_error_text, (0, 0, 0, 8)),
         )
     else:
@@ -127,9 +124,8 @@ def _check_k8s_version(as_list: bool = False) -> Dict[str, Any]:
         k8s_semver_text = (
             f"Require [bright_blue]k8s[/bright_blue] >=[cyan]{MIN_K8S_VERSION}[/cyan] detected {semver_colored}."
         )
-        check_manager.add_target_eval(target_name=target_k8s_version, status=semver_status, value=semver)
+        check_manager.add_check_eval(status=semver_status, value=semver)
         check_manager.add_display(
-            target_name=target_k8s_version,
             display=Padding(k8s_semver_text, (0, 0, 0, 8)),
         )
 

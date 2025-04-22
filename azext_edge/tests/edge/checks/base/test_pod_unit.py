@@ -7,12 +7,11 @@
 import pytest
 
 from azext_edge.edge.common import CheckTaskStatus, PodState
-from azext_edge.edge.providers.check.base import (
-    evaluate_pod_health,
-)
+from azext_edge.edge.providers.check.base import evaluate_pod_health
 from azext_edge.edge.providers.check.base.pod import _process_pod_status, decorate_pod_phase
 from azext_edge.edge.providers.check.common import ALL_NAMESPACES_TARGET, ResourceOutputDetailLevel
 from azext_edge.tests.edge.checks.conftest import generate_pod_stub
+
 from ....generators import generate_random_string
 
 
@@ -90,7 +89,6 @@ def test_evaluate_pod_health(
     evaluate_pod_health(
         check_manager=mocked_check_manager,
         namespace=namespace,
-        target=target_service_pod,
         padding=padding,
         pods=pods,
         detail_level=detail_level,
@@ -384,19 +382,16 @@ def test_process_pod_status(
     resource_name,
     expected_display_texts,
 ):
-    target_name = generate_random_string()
 
     (display_texts, status) = _process_pod_status(
         check_manager=mocked_check_manager,
-        target=target_name,
         pod=pod,
         namespace=namespace,
         detail_level=detail_level,
     )
 
-    assert mocked_check_manager.add_target_conditions.called
-    mocked_check_manager.add_target_eval.assert_any_call(
-        target_name=target_name,
+    assert mocked_check_manager.add_conditions.called
+    mocked_check_manager.add_check_eval.assert_any_call(
         namespace=namespace,
         status=eval_status,
         value=eval_value,

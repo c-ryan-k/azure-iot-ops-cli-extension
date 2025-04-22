@@ -34,7 +34,6 @@ def decorate_pod_phase(phase: str) -> Tuple[str, str]:
 
 def evaluate_pod_health(
     check_manager: CheckManager,
-    target: str,
     namespace: str,
     padding: int,
     pods: List[V1Pod],
@@ -63,7 +62,6 @@ def evaluate_pod_health(
     for pod in pods:
         pod_status_result: PodStatusResult = _process_pod_status(
             check_manager=check_manager,
-            target=target,
             pod=pod,
             namespace=namespace,
             detail_level=detail_level,
@@ -74,7 +72,6 @@ def evaluate_pod_health(
     add_footer = not all(status == CheckTaskStatus.success.value for status in pod_statuses)
 
     check_manager.add_display(
-        target_name=target,
         namespace=namespace,
         display=Padding(table, (0, 0, 0, padding)),
     )
@@ -84,7 +81,6 @@ def evaluate_pod_health(
             " See more details by attaching : --detail-level 1 or --detail-level 2"
         )
         check_manager.add_display(
-            target_name=target,
             namespace=namespace,
             display=Padding(footer, (0, 0, 0, padding)),
         )
@@ -92,7 +88,6 @@ def evaluate_pod_health(
 
 def _process_pod_status(
     check_manager: CheckManager,
-    target: str,
     pod: V1Pod,
     namespace: str,
     detail_level: int = ResourceOutputDetailLevel.summary.value,
@@ -105,7 +100,7 @@ def _process_pod_status(
         f"{target_service_pod}.status.conditions",
     ]
 
-    check_manager.add_target_conditions(target_name=target, namespace=namespace, conditions=conditions)
+    check_manager.add_conditions(namespace=namespace, conditions=conditions)
 
     pod_dict = pod.to_dict()
     pod_name = pod_dict["metadata"]["name"]
@@ -175,8 +170,7 @@ def _process_pod_status(
     elif unknown_conditions_display_list and pod_eval_status != CheckTaskStatus.error.value:
         pod_eval_status = CheckTaskStatus.warning.value
 
-    check_manager.add_target_eval(
-        target_name=target,
+    check_manager.add_check_eval(
         status=pod_eval_status,
         value=pod_eval_value,
         namespace=namespace,

@@ -18,10 +18,7 @@ from ...common import (
 )
 from ...util import parse_kvp_nargs, url_safe_hash_phrase
 from ...util.az_client import parse_resource_id
-from ..orchestration.common import (
-    TRUST_ISSUER_KIND_KEY,
-    TRUST_SETTING_KEYS,
-)
+from ..orchestration.common import TRUST_ISSUER_KIND_KEY, TRUST_SETTING_KEYS
 from ..orchestration.resources.instances import parse_feature_kvp_nargs
 from .common import KubernetesDistroType
 from .template import (
@@ -216,9 +213,7 @@ class InitTargets:
         base_ssc_config = get_default_ssc_config()
         if self.ssc_config:
             base_ssc_config.update(self.ssc_config)
-        template.content["resources"]["secret_store_extension"]["properties"][
-            "configurationSettings"
-        ] = base_ssc_config
+        template.content["resources"]["secret_store_extension"]["properties"]["configurationSettings"] = base_ssc_config
 
         for var_attr in [
             VarAttr(value=self.acs_version, template_key="VERSIONS", moniker="containerStorage"),
@@ -383,9 +378,7 @@ class InitTargets:
         result = {"source": source}
         if self.trust_settings:
             target_settings: Dict[str, str] = {}
-            trust_bundle_def = TEMPLATE_BLUEPRINT_ENABLEMENT.get_type_definition("_1.TrustBundleSettings")[
-                "properties"
-            ]
+            trust_bundle_def = TEMPLATE_BLUEPRINT_ENABLEMENT.get_type_definition("_1.TrustBundleSettings")["properties"]
             allowed_issuer_kinds: Optional[List[str]] = trust_bundle_def.get(TRUST_ISSUER_KIND_KEY, {}).get(
                 "allowedValues"
             )

@@ -4,27 +4,16 @@
 # Licensed under the MIT License. See License file in the project root for license information.
 # ----------------------------------------------------------------------------------------------
 
-from rich.padding import Padding
 from typing import Any, Dict, List
+
+from rich.padding import Padding
 
 from azext_edge.edge.providers.check.base.pod import evaluate_pod_health
 
-from ..support.akri import AKRI_NAME_LABEL_V2
-
 from ..base import get_namespaced_pods_by_prefix
-from .base import (
-    CheckManager,
-    check_post_deployment,
-    filter_resources_by_name,
-    get_resources_grouped_by_namespace,
-)
-
-from .common import (
-    AKRI_PREFIX,
-    PADDING_SIZE,
-    CoreServiceResourceKinds,
-    ResourceOutputDetailLevel,
-)
+from ..support.akri import AKRI_NAME_LABEL_V2
+from .base import CheckManager, check_post_deployment, filter_resources_by_name, get_resources_grouped_by_namespace
+from .common import AKRI_PREFIX, PADDING_SIZE, CoreServiceResourceKinds, ResourceOutputDetailLevel
 
 
 def check_akri_deployment(
@@ -51,7 +40,11 @@ def evaluate_core_service_runtime(
     detail_level: int = ResourceOutputDetailLevel.summary.value,
     resource_name: str = None,
 ) -> Dict[str, Any]:
-    check_manager = CheckManager(check_name="evalCoreServiceRuntime", check_desc="Evaluate Akri core service")
+    check_manager = CheckManager(
+        check_name="evalCoreServiceRuntime",
+        check_desc="Evaluate Akri core service",
+        target=CoreServiceResourceKinds.RUNTIME_RESOURCE.value,
+    )
 
     padding = 6
     akri_runtime_resources: List[dict] = get_namespaced_pods_by_prefix(
@@ -67,16 +60,14 @@ def evaluate_core_service_runtime(
         )
 
         if not akri_runtime_resources:
-            check_manager.add_target(target_name=CoreServiceResourceKinds.RUNTIME_RESOURCE.value)
+            check_manager.add_check()
             check_manager.add_display(
-                target_name=CoreServiceResourceKinds.RUNTIME_RESOURCE.value,
                 display=Padding("Unable to fetch pods.", (0, 0, 0, padding + 2)),
             )
 
     for namespace, pods in get_resources_grouped_by_namespace(akri_runtime_resources):
-        check_manager.add_target(target_name=CoreServiceResourceKinds.RUNTIME_RESOURCE.value, namespace=namespace)
+        check_manager.add_check(namespace=namespace)
         check_manager.add_display(
-            target_name=CoreServiceResourceKinds.RUNTIME_RESOURCE.value,
             namespace=namespace,
             display=Padding(
                 f"Akri runtime resources in namespace {{[purple]{namespace}[/purple]}}", (0, 0, 0, padding)
@@ -85,7 +76,6 @@ def evaluate_core_service_runtime(
 
         evaluate_pod_health(
             check_manager=check_manager,
-            target=CoreServiceResourceKinds.RUNTIME_RESOURCE.value,
             namespace=namespace,
             padding=padding + PADDING_SIZE,
             pods=pods,

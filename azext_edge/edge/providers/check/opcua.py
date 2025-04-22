@@ -4,26 +4,20 @@
 # Licensed under the MIT License. See License file in the project root for license information.
 # ----------------------------------------------------------------------------------------------
 
-from rich.padding import Padding
 from typing import Any, Dict, List
 
-from ..base import get_namespaced_pods_by_prefix
+from rich.padding import Padding
 
+from ..base import get_namespaced_pods_by_prefix
+from ..support.connectors import OPC_NAME_VAR_LABEL, OPCUA_NAME_LABEL
 from .base import (
     CheckManager,
     check_post_deployment,
-    filter_resources_by_name,
     evaluate_pod_health,
+    filter_resources_by_name,
     get_resources_grouped_by_namespace,
 )
-
-from .common import (
-    PADDING_SIZE,
-    CoreServiceResourceKinds,
-    ResourceOutputDetailLevel,
-)
-
-from ..support.connectors import OPC_NAME_VAR_LABEL, OPCUA_NAME_LABEL
+from .common import PADDING_SIZE, CoreServiceResourceKinds, ResourceOutputDetailLevel
 
 
 def check_opcua_deployment(
@@ -50,7 +44,11 @@ def evaluate_core_service_runtime(
     detail_level: int = ResourceOutputDetailLevel.summary.value,
     resource_name: str = None,
 ) -> Dict[str, Any]:
-    check_manager = CheckManager(check_name="evalCoreServiceRuntime", check_desc="Evaluate OPC UA broker core service")
+    check_manager = CheckManager(
+        check_name="evalCoreServiceRuntime",
+        check_desc="Evaluate OPC UA broker core service",
+        target=CoreServiceResourceKinds.RUNTIME_RESOURCE.value,
+    )
 
     padding = 6
     opcua_runtime_resources: List[dict] = []
@@ -70,16 +68,14 @@ def evaluate_core_service_runtime(
         )
 
         if not opcua_runtime_resources:
-            check_manager.add_target(target_name=CoreServiceResourceKinds.RUNTIME_RESOURCE.value)
+            check_manager.add_check()
             check_manager.add_display(
-                target_name=CoreServiceResourceKinds.RUNTIME_RESOURCE.value,
                 display=Padding("Unable to fetch pods.", (0, 0, 0, padding + 2)),
             )
 
     for namespace, pods in get_resources_grouped_by_namespace(opcua_runtime_resources):
-        check_manager.add_target(target_name=CoreServiceResourceKinds.RUNTIME_RESOURCE.value, namespace=namespace)
+        check_manager.add_check(namespace=namespace)
         check_manager.add_display(
-            target_name=CoreServiceResourceKinds.RUNTIME_RESOURCE.value,
             namespace=namespace,
             display=Padding(
                 f"OPC UA broker runtime resources in namespace {{[purple]{namespace}[/purple]}}", (0, 0, 0, padding)
@@ -88,7 +84,6 @@ def evaluate_core_service_runtime(
 
         evaluate_pod_health(
             check_manager=check_manager,
-            target=CoreServiceResourceKinds.RUNTIME_RESOURCE.value,
             namespace=namespace,
             padding=padding + PADDING_SIZE,
             detail_level=detail_level,
