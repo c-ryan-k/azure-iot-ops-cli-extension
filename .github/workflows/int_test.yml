@@ -32,11 +32,6 @@ on:
         type: number
         required: false
         default: 0
-      use-container:
-        description: Build container image for tests
-        type: boolean
-        required: false
-        default: false
     secrets:
       # required for az login
       AZURE_CLIENT_ID:
@@ -77,11 +72,6 @@ on:
         type: number
         required: false
         default: 0
-      use-container:
-        description: Build container image for tests
-        type: boolean
-        required: false
-        default: false
 
 permissions:
   # required for OpenID federation
@@ -272,15 +262,15 @@ jobs:
           python -m pip install tox
           tox r -vv -e python-init-int --notest
       - name: "Tox test environment setup for edge integration tests"
-        if: ${{ matrix.feature == 'default' && !inputs.use-container }}
+        if: ${{ matrix.feature == 'default'}}
         run: |
           tox r -vv -e "python-edge-int" --notest
       - name: "Tox test environment setup for cloud integration tests"
-        if: ${{ matrix.feature == 'syncrules' && !inputs.use-container }}
+        if: ${{ matrix.feature == 'syncrules'}}
         run: |
           tox r -vv -e "python-rpsaas-int" --notest
       - name: "Tox test environment setup for Workload Identity integration tests"
-        if: ${{ matrix.feature == 'trustbundle' && !inputs.use-container }}
+        if: ${{ matrix.feature == 'trustbundle'}}
         run: |
           tox r -vv -e "python-wlif-int" --notest
       - name: "Az CLI login"
@@ -324,7 +314,7 @@ jobs:
         run: |
           tox r -e python-init-int --skip-pkg-install -- --durations=0
       - name: "Tox Edge Integration Tests"
-        if: ${{ matrix.feature == 'default' && !inputs.use-container }}
+        if: ${{ matrix.feature == 'default'}}
         env:
           azext_edge_rg: ${{ steps.env_out.outputs.RESOURCE_GROUP }}
           azext_edge_cluster: ${{ steps.env_out.outputs.CLUSTER_NAME }}
@@ -332,14 +322,14 @@ jobs:
         run: |
           tox r -e "python-edge-int" --skip-pkg-install -- --durations=0 --dist=loadfile -n auto
       - name: "Az CLI login"
-        if: ${{ matrix.feature == 'syncrules' && !inputs.use-container }}
+        if: ${{ matrix.feature == 'syncrules'}}
         uses: azure/login@v2
         with:
           client-id: ${{ secrets.AZURE_CLIENT_ID }}
           tenant-id: ${{ secrets.AZURE_TENANT_ID }}
           subscription-id: ${{ secrets.AZURE_SUBSCRIPTION_ID }}
       - name: "Tox Cloud Integration Tests"
-        if: ${{ matrix.feature == 'syncrules' && !inputs.use-container }}
+        if: ${{ matrix.feature == 'syncrules'}}
         env:
           azext_edge_rg: ${{ steps.env_out.outputs.RESOURCE_GROUP }}
           azext_edge_cluster: ${{ steps.env_out.outputs.CLUSTER_NAME }}
@@ -347,7 +337,7 @@ jobs:
         run: |
           tox r -e "python-rpsaas-int" --skip-pkg-install -- --durations=0 --dist=loadfile -n auto
       - name: "Tox Workload Identity Integration Tests"
-        if: ${{ matrix.feature == 'trustbundle' && !inputs.use-container }}
+        if: ${{ matrix.feature == 'trustbundle'}}
         env:
           azext_edge_rg: ${{ steps.env_out.outputs.RESOURCE_GROUP }}
           azext_edge_instance: ${{ steps.env_out.outputs.INSTANCE_NAME }}
@@ -356,55 +346,18 @@ jobs:
           tox r -e "python-wlif-int" --skip-pkg-install -- --durations=0 --dist=loadfile -n auto
 
       - name: "Run Code Coverage"
-        if: ${{!inputs.use-container}}
         run: |
           python -m pip install coverage
           tox r -e report
           coverage=$(jq .totals.percent_covered coverage.json | cut -c1-4)
           echo $(coverage report --skip-covered) >> $GITHUB_STEP_SUMMARY
       - name: "Upload code coverage"
-        if: ${{ contains(fromJSON('["default", "custom-input"]'), matrix.feature) && !inputs.use-container}}
+        if: ${{ contains(fromJSON('["default", "custom-input"]'), matrix.feature)}}
         uses: actions/upload-artifact@v4
         with:
           name: code-coverage
           path: htmlcov/
 
-      - name: "Containerized tests"
-        if: ${{ matrix.feature == 'default' && inputs.use-container }}
-        env:
-          azext_edge_skip_init: true # skip init tests in container
-          azext_edge_init_redeployment: false # ensure no redeployment in container
-          AIO_CLI_INIT_PREFLIGHT_DISABLED: ${{ steps.init.outputs.NO_PREFLIGHT }}
-          azext_edge_rg: ${{ steps.env_out.outputs.RESOURCE_GROUP }}
-          azext_edge_cluster: ${{ steps.env_out.outputs.CLUSTER_NAME }}
-          azext_edge_instance: ${{ steps.env_out.outputs.INSTANCE_NAME }}
-        run: |
-          # volume mounts
-          azure_dir=$(realpath ~/.azure)
-          kubeconfig=$(realpath ~/.kube/config)
-          kubeconfig_mount=/root/.kube/config
-          tempLog=$(mktemp -d)
-
-          # env vars
-          envVars=()
-          envVars+=("-e" "azext_edge_skip_init=$azext_edge_skip_init")
-          envVars+=("-e" "azext_edge_init_redeployment=$azext_edge_init_redeployment")
-          envVars+=("-e" "AIO_CLI_INIT_PREFLIGHT_DISABLED=$AIO_CLI_INIT_PREFLIGHT_DISABLED")
-          envVars+=("-e" "azext_edge_rg=$azext_edge_rg")
-          envVars+=("-e" "azext_edge_cluster=$azext_edge_cluster")
-          envVars+=("-e" "azext_edge_instance=$azext_edge_instance")
-          envVars+=("-e" "KUBECONFIG=$kubeconfig_mount")
-
-          # Run tests
-          set +e
-          docker run \
-            --rm \
-            "${envVars[@]}" \
-            -v "$kubeconfig:$kubeconfig_mount:ro" \
-            -v "${azure_dir}:/root/.azure" \
-            -v "${tempLog}:/usr/src/azure-iot-ops/junit" \
-            --network host \
-            $(docker build . -q)
       - name: "Run smoke tests"
         run: |
           az iot ops support create-bundle
