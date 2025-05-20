@@ -30,11 +30,13 @@ jobs:
           - "3.10"
           - "3.9"
     steps:
+      - uses: actions/checkout@v4
       - name: Setup python ${{ matrix.python }}
         uses: actions/setup-python@v5
         with:
           python-version: ${{ matrix.python }}
-      - uses: actions/checkout@v4
+          cache: "pip"
+          cache-dependency-path: dev_requirements.txt
       - name: Install dependencies
         run: |
           python -m pip install tox
@@ -42,7 +44,7 @@ jobs:
       - name: Run linter
         run: tox -e lint -vv --skip-pkg-install
   tox:
-    needs: [lint]  # Code coverage will run if linters fail (which runs unit tests) - no need to spin up agents for failed linters
+    needs: [lint] # Code coverage will run if linters fail (which runs unit tests) - no need to spin up agents for failed linters
     name: Unit test ${{ matrix.py }} - ${{ matrix.os }}
     continue-on-error: ${{ inputs.continue-on-error }}
     runs-on: ${{ matrix.os }}
@@ -65,7 +67,9 @@ jobs:
           python-version: ${{ matrix.py }}
       - uses: actions/checkout@v4
       - name: Setup test suite
-        run: tox r -e python -vv --notest
+        run: |
+          python -m pip install tox
+          tox r -e python -vv --notest
       - name: Run test suite
         run: tox r -e python -vv --skip-pkg-install
   code-coverage:
@@ -74,10 +78,15 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: 3.12
+          cache: "pip"
+          cache-dependency-path: dev_requirements.txt
       - name: Run code coverage
         run: |
           python -m pip install tox
-          tox -e coverage
+          tox -vv -e coverage
           coverage=$(jq .totals.percent_covered coverage.json | cut -c1-4)
           echo "Code coverage: $coverage%" >> $GITHUB_STEP_SUMMARY
       - name: Upload code coverage
