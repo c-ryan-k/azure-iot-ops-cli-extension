@@ -356,7 +356,7 @@ jobs:
           coverage=$(jq .totals.percent_covered coverage.json | cut -c1-4)
           echo $(coverage report --skip-covered) >> $GITHUB_STEP_SUMMARY
       - name: "Upload code coverage"
-        if: ${{!inputs.use-container}}
+        if: ${{ contains(fromJSON('["default", "custom-input"]'), matrix.feature) && !inputs.use-container}}
         uses: actions/upload-artifact@v4
         with:
           name: code-coverage
