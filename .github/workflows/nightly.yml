@@ -219,7 +219,7 @@ jobs:
             # Sleep for 4 minutes
             sleep 240
           done &
-      - name: "Tox INIT Integration Tests"
+      - name: "Tox Unit and Integration Tests"
         env:
           AIO_CLI_INIT_PREFLIGHT_DISABLED: ${{ steps.init.outputs.NO_PREFLIGHT }}
           azext_edge_init_continue_on_error: ${{ inputs.init-continue-on-error || '' }}
@@ -231,12 +231,11 @@ jobs:
         run: |
           tox r -e ${{ env.TOX_ENVS }} --skip-pkg-install
       # technically a duplizcate run of 'tox r -e report'
-      - name: "Run Code Coverage"
+      - name: "Total Code Coverage"
         run: |
           python -m pip install coverage
           tox r -e report
-          coverage=$(jq .totals.percent_covered coverage.json | cut -c1-4)
-          echo $(coverage report --skip-covered) >> $GITHUB_STEP_SUMMARY
+          coverage report --skip-covered
       - name: "Upload code coverage"
         uses: actions/upload-artifact@v4
         with:
