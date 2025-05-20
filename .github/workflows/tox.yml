@@ -49,6 +49,4 @@ jobs:
       - name: Display code coverage
         run: |
           python -m pip install coverage
-          coverage=$(jq .totals.percent_covered coverage.json | cut -c1-4)
-          echo "Code coverage total percent: $coverage%"
-          echo $(coverage report --skip-covered) >> $GITHUB_STEP_SUMMARY
+          coverage report --skip-covered
