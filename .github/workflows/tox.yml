@@ -18,38 +18,11 @@ permissions:
   contents: read
 
 jobs:
-  lint:
-    name: Lint
-    continue-on-error: ${{ inputs.continue-on-error }}
-    runs-on: ubuntu-latest
-    strategy:
-      matrix:
-        python:
-          - "3.12"
-          - "3.11"
-          - "3.10"
-          - "3.9"
-    steps:
-      - uses: actions/checkout@v4
-      - name: Setup python ${{ matrix.python }}
-        uses: actions/setup-python@v5
-        with:
-          python-version: ${{ matrix.python }}
-          cache: "pip"
-          cache-dependency-path: dev_requirements.txt
-      - name: Install dependencies
-        run: |
-          python -m pip install tox
-          tox -e lint -vv --notest
-      - name: Run linter
-        run: tox -e lint -vv --skip-pkg-install
   tox:
-    needs: [lint] # Code coverage will run if linters fail (which runs unit tests) - no need to spin up agents for failed linters
     name: Unit test ${{ matrix.py }} - ${{ matrix.os }}
     continue-on-error: ${{ inputs.continue-on-error }}
     runs-on: ${{ matrix.os }}
     strategy:
-      # fail-fast: false  # Maybe we should fail fast to give time back to mac runners
       matrix:
         os:
           - ubuntu-22.04
@@ -69,9 +42,9 @@ jobs:
       - name: Setup test suite
         run: |
           python -m pip install tox
-          tox r -e python -vv --notest
+          tox r -vv --notest
       - name: Run test suite
-        run: tox r -e python -vv --skip-pkg-install
+        run: tox r -vv --skip-pkg-install
   code-coverage:
     name: Calculate code coverage
     continue-on-error: true
