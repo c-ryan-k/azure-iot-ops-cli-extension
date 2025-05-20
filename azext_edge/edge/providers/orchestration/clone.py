@@ -502,7 +502,7 @@ class InstanceRestore:
             for i in range(total_pages):
                 status = f"Replicating {deployment_name} {i + 1}/{total_pages}"
                 console.update(status=status)
-                page = f"_{i + 1}" if total_pages > 1 else ""
+                page = f"_{i+1}" if total_pages > 1 else ""
                 poller = self._deploy_template(
                     content=deployment_work[i],
                     parameters=parameters,
