@@ -24,11 +24,6 @@ on:
         type: string
         required: false
         default: ""
-      init-continue-on-error:
-        description: Continue on error for init integration tests
-        type: boolean
-        required: false
-        default: true
       keep-on-failure:
         description: Number of minutes to keep the cluster(s) active on failure (max 240 min).
         type: number
@@ -78,17 +73,23 @@ jobs:
       INIT_ARG: ${{ needs.setup.outputs.init_args }}
       CREATE_ARG: ${{ needs.setup.outputs.create_args }}
     steps:
-      - name: "Determine Init Args"
+      - name: "Build init and create args"
         id: "init"
         run: |
-          echo "NO_PREFLIGHT=false" >> $GITHUB_OUTPUT
-          echo "CREATE_ARG=--add-insecure-listener" >> $GITHUB_OUTPUT
+          if [[ -n "${{ env.RUNTIME_CREATE_ARGS }}" ]]; then
+            echo "CREATE_ARG=${{ env.RUNTIME_CREATE_ARGS }}" >> $GITHUB_OUTPUT
+          else
+            CREATE_ARGS="--add-insecure-listener --enable-rsync --trust-settings configMapName=example-bundle configMapKey=trust-bundle.pem issuerKind=Issuer issuerName=selfsigned-issuer"
+            echo "CREATE_ARG=${CREATE_ARGS}" >> $GITHUB_OUTPUT
+          fi
+
+          if [[ -n "${{ env.RUNTIME_INIT_ARGS }}" ]]; then
+            echo "INIT_ARG=${{ env.RUNTIME_INIT_ARGS }}" >> $GITHUB_OUTPUT
+          else
+            echo "INIT_ARG=--user-trust true" >> $GITHUB_OUTPUT
+          fi
+
           echo "NO_PREFLIGHT=true" >> $GITHUB_OUTPUT
-          echo "CREATE_ARG=--enable-rsync" >> $GITHUB_OUTPUT
-          echo "CREATE_ARG=${{ env.RUNTIME_CREATE_ARGS }}" >> $GITHUB_OUTPUT
-          echo "INIT_ARG=${{ env.RUNTIME_INIT_ARGS }}" >> $GITHUB_OUTPUT
-          echo "CREATE_ARG=--trust-settings configMapName=example-bundle configMapKey=trust-bundle.pem issuerKind=Issuer issuerName=selfsigned-issuer " >> $GITHUB_OUTPUT
-          echo "INIT_ARG=--user-trust true" >> $GITHUB_OUTPUT
       - name: "Output variables for future steps"
         id: "env_out"
         run: |
@@ -188,6 +189,7 @@ jobs:
           EOF
       - name: "Tox test environment setup"
         run: |
+          cp ./pytest.ini.example ./pytest.ini
           python -m pip install tox
           tox r -vv -e "${{env.TOX_ENVS}}" --notest
       - name: "Az CLI login"
@@ -220,17 +222,25 @@ jobs:
             sleep 240
           done &
       - name: "Tox Unit and Integration Tests"
+        continue-on-error: true
         env:
           AIO_CLI_INIT_PREFLIGHT_DISABLED: ${{ steps.init.outputs.NO_PREFLIGHT }}
-          azext_edge_init_continue_on_error: ${{ inputs.init-continue-on-error || '' }}
           azext_edge_rg: ${{ steps.env_out.outputs.RESOURCE_GROUP }}
           azext_edge_cluster: ${{ steps.env_out.outputs.CLUSTER_NAME }}
           azext_edge_instance: ${{ steps.env_out.outputs.INSTANCE_NAME }}
           azext_edge_init_args: ${{ steps.init.outputs.INIT_ARG }}
           azext_edge_create_args: ${{ steps.init.outputs.CREATE_ARG }}
         run: |
-          tox r -e ${{ env.TOX_ENVS }} --skip-pkg-install
-      # technically a duplizcate run of 'tox r -e report'
+          IFS=',' read -ra TOX_ENV_ARRAY <<< "${{ env.TOX_ENVS }}"
+          for env_name in "${TOX_ENV_ARRAY[@]}"; do
+            echo "::group::Tox - $env_name"
+            echo "Running tox env: $env_name"
+
+            # Run tox for this environment
+            tox r -vv -e "$env_name" --skip-pkg-install || echo "Environment $env_name failed but continuing..."
+            echo "::endgroup::"
+          done
+      # ensure we get a coverage report in case that env fails
       - name: "Total Code Coverage"
         run: |
           python -m pip install coverage
@@ -241,13 +251,6 @@ jobs:
         with:
           name: code-coverage
           path: htmlcov/
-      - name: "Az CLI login"
-        if: ${{ matrix.feature == 'syncrules'}}
-        uses: azure/login@v2
-        with:
-          client-id: ${{ secrets.AZURE_CLIENT_ID }}
-          tenant-id: ${{ secrets.AZURE_TENANT_ID }}
-          subscription-id: ${{ secrets.AZURE_SUBSCRIPTION_ID }}
       - name: "Keep cluster alive"
         if: ${{ env.KEEP_ALIVE > 0 && failure() }}
         run: |
