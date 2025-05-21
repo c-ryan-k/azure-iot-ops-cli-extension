@@ -189,7 +189,6 @@ jobs:
           EOF
       - name: "Tox test environment setup"
         run: |
-          cp ./pytest.ini.example ./pytest.ini
           python -m pip install tox
           tox r -vv -e "${{env.TOX_ENVS}}" --notest
       - name: "Az CLI login"
