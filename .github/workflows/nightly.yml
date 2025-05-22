@@ -42,7 +42,8 @@ env:
   KEEP_ALIVE: ${{ inputs.keep-on-failure }}
   RUNTIME_CREATE_ARGS: "${{ inputs.runtime-create-args }}"
   RUNTIME_INIT_ARGS: "${{ inputs.runtime-init-args }}"
-  TOX_ENVS: "clean,lint,python,python-init-int,python-all-int,python-wlif-int,report"
+  TOX_INIT_ENV: "python-init-int"
+  TOX_INT_TEST_ENVS: "python-edge-int,python-rpsaas-int,python-wlif-int"
 
 jobs:
   setup:
@@ -190,7 +191,18 @@ jobs:
       - name: "Tox test environment setup"
         run: |
           python -m pip install tox
-          tox r -vv -e "${{env.TOX_ENVS}}" --notest
+          tox r -vv --notest
+          tox r -vv -e "${{env.TOX_INIT_ENV}},${{env.TOX_INT_TEST_ENVS}}" --notest
+      - name: "Tox - lint, unit test"
+        continue-on-error: true
+        env:
+          AIO_CLI_INIT_PREFLIGHT_DISABLED: ${{ steps.init.outputs.NO_PREFLIGHT }}
+          azext_edge_rg: ${{ steps.env_out.outputs.RESOURCE_GROUP }}
+          azext_edge_cluster: ${{ steps.env_out.outputs.CLUSTER_NAME }}
+          azext_edge_instance: ${{ steps.env_out.outputs.INSTANCE_NAME }}
+          azext_edge_init_args: ${{ steps.init.outputs.INIT_ARG }}
+          azext_edge_create_args: ${{ steps.init.outputs.CREATE_ARG }}
+        run: tox r -vv --skip-pkg-install
       - name: "Az CLI login"
         uses: azure/login@v2
         with:
@@ -220,7 +232,7 @@ jobs:
             # Sleep for 4 minutes
             sleep 240
           done &
-      - name: "Tox Unit and Integration Tests"
+      - name: "Tox - init"
         continue-on-error: true
         env:
           AIO_CLI_INIT_PREFLIGHT_DISABLED: ${{ steps.init.outputs.NO_PREFLIGHT }}
@@ -230,22 +242,31 @@ jobs:
           azext_edge_init_args: ${{ steps.init.outputs.INIT_ARG }}
           azext_edge_create_args: ${{ steps.init.outputs.CREATE_ARG }}
         run: |
-          IFS=',' read -ra TOX_ENV_ARRAY <<< "${{ env.TOX_ENVS }}"
+          tox r -vv -e "${{ env.TOX_INIT_ENV }}" --skip-pkg-install || echo "Environment $env_name failed but continuing..."
+      - name: "Tox - Integration tests"
+        continue-on-error: true
+        env:
+          AIO_CLI_INIT_PREFLIGHT_DISABLED: ${{ steps.init.outputs.NO_PREFLIGHT }}
+          azext_edge_rg: ${{ steps.env_out.outputs.RESOURCE_GROUP }}
+          azext_edge_cluster: ${{ steps.env_out.outputs.CLUSTER_NAME }}
+          azext_edge_instance: ${{ steps.env_out.outputs.INSTANCE_NAME }}
+          azext_edge_init_args: ${{ steps.init.outputs.INIT_ARG }}
+          azext_edge_create_args: ${{ steps.init.outputs.CREATE_ARG }}
+        run: |
+          IFS=',' read -ra TOX_ENV_ARRAY <<< "${{ env.TOX_INT_TEST_ENVS }}"
           for env_name in "${TOX_ENV_ARRAY[@]}"; do
             echo "::group::Tox - $env_name"
-            echo "Running tox env: $env_name"
-
-            # Run tox for this environment
             tox r -vv -e "$env_name" --skip-pkg-install || echo "Environment $env_name failed but continuing..."
             echo "::endgroup::"
           done
-      # ensure we get a coverage report in case that env fails
-      - name: "Total Code Coverage"
+      - name: "Tox Report"
+        continue-on-error: true
         run: |
           python -m pip install coverage
           tox r -e report
           coverage report --skip-covered
       - name: "Upload code coverage"
+        continue-on-error: true
         uses: actions/upload-artifact@v4
         with:
           name: code-coverage
