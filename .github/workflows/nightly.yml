@@ -43,7 +43,7 @@ env:
   RUNTIME_CREATE_ARGS: "${{ inputs.runtime-create-args }}"
   RUNTIME_INIT_ARGS: "${{ inputs.runtime-init-args }}"
   TOX_INIT_ENV: "python-init-int"
-  TOX_INT_TEST_ENVS: "python-edge-int,python-rpsaas-int,python-wlif-int"
+  TOX_INT_TEST_ENVS: "python-edge-int,python-wlif-int"
 
 jobs:
   setup:
