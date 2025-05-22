@@ -262,9 +262,7 @@ jobs:
       - name: "Tox Report"
         continue-on-error: true
         run: |
-          python -m pip install coverage
           tox r -e report
-          coverage report --skip-covered
       - name: "Upload code coverage"
         continue-on-error: true
         uses: actions/upload-artifact@v4
