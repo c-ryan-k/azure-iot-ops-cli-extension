@@ -240,7 +240,7 @@ jobs:
           azext_edge_init_args: ${{ steps.init.outputs.INIT_ARG }}
           azext_edge_create_args: ${{ steps.init.outputs.CREATE_ARG }}
         run: |
-          tox r -vv -e "${{ env.TOX_INIT_ENV }}" --skip-pkg-install || echo "Environment $env_name failed but continuing..."
+          tox r -vv -e "${{ env.TOX_INIT_ENV }}" --skip-pkg-install
       - name: "Tox - Integration tests"
         continue-on-error: true
         env:
@@ -254,7 +254,8 @@ jobs:
           IFS=',' read -ra TOX_ENV_ARRAY <<< "${{ env.TOX_INT_TEST_ENVS }}"
           for env_name in "${TOX_ENV_ARRAY[@]}"; do
             echo "::group::Tox - $env_name"
-            tox r -vv -e "$env_name" --skip-pkg-install || echo "Environment $env_name failed but continuing..."
+            echo "Running Tox - $env_name"
+            tox r -vv -e "$env_name" --skip-pkg-install
             echo "::endgroup::"
           done
       - name: "Tox Report"
