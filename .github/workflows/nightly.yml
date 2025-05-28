@@ -32,9 +32,9 @@ permissions:
   id-token: "write"
 
 env:
-  RESOURCE_GROUP: "${{ inputs.resource-group }}"
+  RESOURCE_GROUP: "${{ github.event.inputs.resource-group || 'ops-cli-int-test-rg' }}"
   K3S_VERSION: "v1.29.15+k3s1"
-  CUSTOM_LOCATIONS_OID: "${{ inputs.custom-locations-oid }}"
+  CUSTOM_LOCATIONS_OID: "${{ inputs.custom-locations-oid || '51dfe1e8-70c6-4de5-a08e-e18aff23d815' }}"
   RUNTIME_CREATE_ARGS: "${{ inputs.runtime-create-args }}"
   RUNTIME_INIT_ARGS: "${{ inputs.runtime-init-args }}"
   TOX_INIT_ENV: "python-init-int"
