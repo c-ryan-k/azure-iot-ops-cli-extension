@@ -12,7 +12,7 @@ on:
         description: Object ID of Custom Locations RP
         type: string
         required: false
-        default: '51dfe1e8-70c6-4de5-a08e-e18aff23d815'
+        default: "51dfe1e8-70c6-4de5-a08e-e18aff23d815"
     secrets:
       # required for az login
       AZURE_CLIENT_ID:
@@ -32,12 +32,12 @@ on:
         description: Object ID of Custom Locations RP
         type: string
         required: false
-        default: '51dfe1e8-70c6-4de5-a08e-e18aff23d815'
+        default: "51dfe1e8-70c6-4de5-a08e-e18aff23d815"
 
 permissions:
   # required for OpenID federation
-  contents: 'read'
-  id-token: 'write'
+  contents: "read"
+  id-token: "write"
 
 env:
   RESOURCE_GROUP: "${{ inputs.resource-group }}"
@@ -115,8 +115,8 @@ jobs:
           echo "CLUSTER_NAME=${{ env.CLUSTER_NAME }}" >> $GITHUB_OUTPUT
       - name: "Containerized tests"
         env:
-          azext_edge_skip_init: true  # skip init tests in container
-          azext_edge_init_redeployment: false  # ensure no redeployment in container
+          azext_edge_skip_init: true # skip init tests in container
+          azext_edge_init_redeployment: false # ensure no redeployment in container
           azext_edge_rg: ${{ steps.env_out.outputs.RESOURCE_GROUP }}
           azext_edge_cluster: ${{ steps.env_out.outputs.CLUSTER_NAME }}
           azext_edge_instance: ${{ steps.env_out.outputs.INSTANCE_NAME }}

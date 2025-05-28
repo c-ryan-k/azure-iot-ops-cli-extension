@@ -4,7 +4,7 @@ on:
   workflow_call:
     outputs:
       upload_success:
-        description: 'Whether or not the wheel was uploaded from this workflow'
+        description: "Whether or not the wheel was uploaded from this workflow"
         value: ${{ jobs.upload_wheel.outputs.upload_success }}
 env:
   storage_container_url: ${{ secrets.storage_container_url }}
@@ -40,7 +40,7 @@ jobs:
         with:
           client-id: ${{ secrets.AZURE_CLIENT_ID }}
           tenant-id: ${{ secrets.AZURE_TENANT_ID }}
-          subscription-id: ${{ secrets.AZURE_SUBSCRIPTION_ID }} 
+          subscription-id: ${{ secrets.AZURE_SUBSCRIPTION_ID }}
       - name: Determine if version already exists
         id: duplicate_check
         run: |
@@ -61,4 +61,4 @@ jobs:
         if: steps.duplicate_check.outputs.CONTINUE == 'true'
         run: |
           azcopy copy ${{ env.wheel }} "${{ env.storage_container_url }}/${{ env.wheel }}"
-          echo "upload_success=true" >> $GITHUB_OUTPUT 
+          echo "upload_success=true" >> $GITHUB_OUTPUT
