@@ -69,15 +69,15 @@ jobs:
           if [[ -n "${{ env.RUNTIME_CREATE_ARGS }}" ]]; then
             echo "CREATE_ARG=${{ env.RUNTIME_CREATE_ARGS }}" >> $GITHUB_OUTPUT
           else
-            CREATE_ARGS="--add-insecure-listener --enable-rsync"
-            CREATE_ARGS="${CREATE_ARGS} --trust-settings configMapName=example-bundle configMapKey=trust-bundle.pem issuerKind=Issuer issuerName=selfsigned-issuer"
-            echo "CREATE_ARG=${CREATE_ARGS}" >> $GITHUB_OUTPUT
+            CREATE_ARG="--add-insecure-listener --enable-rsync"
+            CREATE_ARG="${CREATE_ARG} --trust-settings configMapName=example-bundle configMapKey=trust-bundle.pem issuerKind=Issuer issuerName=selfsigned-issuer"
+            echo "CREATE_ARG=${CREATE_ARG}" >> $GITHUB_OUTPUT
           fi
 
           if [[ -n "${{ env.RUNTIME_INIT_ARGS }}" ]]; then
             echo "INIT_ARG=${{ env.RUNTIME_INIT_ARGS }}" >> $GITHUB_OUTPUT
           else
-            echo INIT_ARGS="--user-trust true" >> $GITHUB_OUTPUT
+            echo INIT_ARG="--user-trust true" >> $GITHUB_OUTPUT
           fi
 
           echo "NO_PREFLIGHT=true" >> $GITHUB_OUTPUT
