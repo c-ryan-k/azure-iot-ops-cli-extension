@@ -2,7 +2,7 @@ name: Nightly Integration Tests
 on:
   schedule:
     - cron: "0 9 * * *" # Run daily at 1:00 AM Pacific Time (9:00 AM UTC)
-      
+
   workflow_dispatch:
     inputs:
       resource-group:
@@ -154,7 +154,6 @@ jobs:
         run: |
           tox r -vv -e "${{ env.TOX_INIT_ENV }}" --skip-pkg-install
       - name: "Tox - Integration tests"
-        continue-on-error: true
         env:
           AIO_CLI_INIT_PREFLIGHT_DISABLED: ${{ steps.init.outputs.NO_PREFLIGHT }}
           azext_edge_rg: ${{ steps.env_out.outputs.RESOURCE_GROUP }}
@@ -171,11 +170,11 @@ jobs:
             echo "::endgroup::"
           done
       - name: "Tox Report"
-        continue-on-error: true
+        if: ${{ always() }}
         run: |
           tox r -e report
       - name: "Upload code coverage"
-        continue-on-error: true
+        if: ${{ always() }}
         uses: actions/upload-artifact@v4
         with:
           name: code-coverage
