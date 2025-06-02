@@ -405,6 +405,24 @@ jobs:
           az iot ops check --as-object
           az iot ops check --svc broker --resources broker brokerlistener
           az iot ops asset query -g ${{ env.RESOURCE_GROUP }} --location westus -o table
+
+      - name: "Create and upload support bundle on failure"
+        if: ${{ failure() }}
+        run: |
+          # Format date as YYYY-MM-DD-HHMM
+          DATE_STR=$(date +"%Y-%m-%d-%H%M")
+          BUNDLE_NAME="int-sb-${DATE_STR}-${{ env.CLUSTER_NAME }}.zip"
+
+          STORAGE_ACCOUNT_NAME="aiosbstore"
+          STORAGE_CONTAINER_NAME="bundles"
+
+          # Create the support bundle with the specified name
+          az iot ops support create-bundle --name "${BUNDLE_NAME}"
+
+          # Upload the bundle to the storage account
+          az storage blob upload --account-name ${STORAGE_ACCOUNT_NAME} --container-name ${STORAGE_CONTAINER_NAME} --name "${BUNDLE_NAME}" --file "./${BUNDLE_NAME}" --auth-mode login
+
+          echo "Support bundle uploaded as ${BUNDLE_NAME}"
       - name: "Keep cluster alive"
         if: ${{ env.KEEP_ALIVE > 0 && failure() }}
         run: |
