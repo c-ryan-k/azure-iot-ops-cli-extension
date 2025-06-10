@@ -91,6 +91,8 @@ env:
 jobs:
   setup:
     name: "Check Inputs"
+    # Only run scheduled workflow for the dev branch on the main repo
+    if: github.event_name != 'schedule' || (github.repository == 'azure/azure-iot-ops-cli-extension' && github.ref == 'refs/heads/dev')
     runs-on: ubuntu-22.04
     outputs:
       create_args: ${{ steps.custom_input.outputs.CREATE_ARG }}
