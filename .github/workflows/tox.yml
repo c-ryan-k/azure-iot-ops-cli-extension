@@ -30,6 +30,7 @@ jobs:
           - windows-2022
           - macos-13
         py:
+          - "3.13"
           - "3.12"
           - "3.11"
           - "3.10"
@@ -46,6 +47,7 @@ jobs:
           tox r -vv --notest
       - name: Run test suite
         run: tox r --skip-pkg-install
+        continue-on-error: ${{ inputs.continue-on-error || matrix.py == '3.13' }}
       - name: Upload coverage report
         if: ${{ matrix.os == 'ubuntu-22.04' && matrix.py == '3.12' }}
         continue-on-error: true
