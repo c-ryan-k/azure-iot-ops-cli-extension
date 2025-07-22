@@ -105,7 +105,7 @@ def test_get_cluster_resource_selectors():
     from azext_edge.edge.providers.support.certmanager import (
         get_cluster_resource_selectors,
         TRUST_MANAGER_WEBHOOK_LABEL,
-        CERT_MANAGER_WEBHOOK_NAME_LABEL_SELECTOR,
+        CERT_MANAGER_WEBHOOK_NAME_FIELD_SELECTOR,
     )
 
     selectors = get_cluster_resource_selectors()
@@ -117,4 +117,4 @@ def test_get_cluster_resource_selectors():
     vwc_selectors = selectors[BundleResourceKind.validatingwebhook.value]
     assert "label_selectors" in vwc_selectors
     assert TRUST_MANAGER_WEBHOOK_LABEL in vwc_selectors["label_selectors"]
-    assert CERT_MANAGER_WEBHOOK_NAME_LABEL_SELECTOR in vwc_selectors["label_selectors"]
+    assert CERT_MANAGER_WEBHOOK_NAME_FIELD_SELECTOR in vwc_selectors["field_selectors"]

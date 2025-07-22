@@ -8,7 +8,7 @@ from functools import partial
 from typing import Dict, Iterable, Optional
 
 from azext_edge.edge.common import BundleResourceKind
-from azext_edge.edge.providers.support.common import NAME_LABEL_FORMAT, RESOURCE_NAME_FORMAT, ResourceSelectors
+from azext_edge.edge.providers.support.common import NAME_LABEL_FORMAT, NAME_FIELD_FORMAT, ResourceSelectors
 from knack.log import get_logger
 
 from ..edge_api import CERTMANAGER_API_V1, EdgeResourceApi
@@ -29,7 +29,7 @@ CERT_DIRECTORY_PATH = CERTMANAGER_API_V1.moniker
 CERT_MANAGER_NAMESPACE = "cert-manager"
 TRUST_BUNDLE_LABEL = "trust.cert-manager.io/bundle"
 CERT_MANAGER_WEBHOOK_NAME = "aio-cert-manager-webhook"
-CERT_MANAGER_WEBHOOK_NAME_LABEL_SELECTOR = RESOURCE_NAME_FORMAT.format(name=CERT_MANAGER_WEBHOOK_NAME)
+CERT_MANAGER_WEBHOOK_NAME_FIELD_SELECTOR = NAME_FIELD_FORMAT.format(name=CERT_MANAGER_WEBHOOK_NAME)
 TRUST_MANAGER_WEBHOOK_LABEL = NAME_LABEL_FORMAT.format(label="aio-trust-manager")
 
 
@@ -106,7 +106,7 @@ def get_cluster_resource_selectors() -> Dict[str, ResourceSelectors]:
         BundleResourceKind.validatingwebhook.value: ResourceSelectors(
             label_selectors=[
                 TRUST_MANAGER_WEBHOOK_LABEL,
-                CERT_MANAGER_WEBHOOK_NAME_LABEL_SELECTOR,
             ],
+            field_selectors=[CERT_MANAGER_WEBHOOK_NAME_FIELD_SELECTOR],
         ),
     }

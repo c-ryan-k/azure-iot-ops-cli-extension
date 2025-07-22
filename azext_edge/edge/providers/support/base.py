@@ -691,24 +691,11 @@ def _get_cluster_resource_configs() -> Dict[str, ClusterResourceConfig]:
     """Get configuration for supported cluster resource types."""
     return {
         BundleResourceKind.mutatingwebhook.value: ClusterResourceConfig(
-            api_call=(
-                lambda label_selector, field_selector: (
-                    client.AdmissionregistrationV1Api().list_mutating_webhook_configuration(
-                        label_selector=label_selector,
-                        field_selector=field_selector,
-                    )
-                )
-            ),
+            api_list_call=client.AdmissionregistrationV1Api().list_mutating_webhook_configuration,
             filename="mutating-webhook-configurations.yaml",
         ),
         BundleResourceKind.validatingwebhook.value: ClusterResourceConfig(
-            api_call=(
-                lambda label_selector, field_selector: (
-                    client.AdmissionregistrationV1Api().list_validating_webhook_configuration(
-                        label_selector=label_selector, field_selector=field_selector
-                    )
-                )
-            ),
+            api_list_call=client.AdmissionregistrationV1Api().list_validating_webhook_configuration,
             filename="validating-webhook-configurations.yaml",
         ),
     }
@@ -763,64 +750,89 @@ def _collect_selectors_for_resource_type(resource_type_str: str) -> Tuple[List[s
     return all_label_selectors, all_field_selectors
 
 
+def _matches_field_selector(resource: Any, field_selector: str) -> bool:
+    """
+    Check if a resource matches a field selector.
+
+    Args:
+        resource: The Kubernetes resource object to check
+        field_selector: Field selector string like "metadata.name=value"
+
+    Returns:
+        bool: True if the resource matches the field selector, False otherwise
+    """
+    if "=" not in field_selector:
+        return False
+
+    field_path, expected_value = field_selector.split("=", 1)
+
+    # Navigate through the resource using the field path
+    current_obj = resource
+    field_parts = field_path.split(".")
+
+    try:
+        for part in field_parts:
+            current_obj = getattr(current_obj, part)
+
+        # Check if the field value matches
+        return str(current_obj) == expected_value
+    except (AttributeError, TypeError):
+        # Field path doesn't exist or isn't accessible
+        return False
+
+
 def _fetch_grouped_resources_by_selectors(
-    api_call: Callable[[Optional[str], Optional[str]], Any], label_selectors: List[str], field_selectors: List[str]
+    api_list_call: Callable, label_selectors: List[str], field_selectors: List[str]
 ) -> Optional[object]:
     """
     Queries Kubernetes API for resources based on provided label and field selectors.
 
     Args:
-        api_call: A function that takes (label_selector, field_selector) and returns a resource list.
+        api_list_call: A function that returns a resource list.
         label_selectors: List of individual label selector strings (OR logic).
         field_selectors: List of individual field selector strings (OR logic).
     Returns:
         Optional[object]: A resource list object containing all resources, or None if no resources found.
     """
-    all_resources = []
-    resource_container = None
-
     # Default to empty lists if no selectors provided
     label_selectors = label_selectors or []
     field_selectors = field_selectors or []
 
-    # If no selectors at all, return all API results
-    if not label_selectors and not field_selectors:
-        try:
-            result = api_call()
-            return result
-        except Exception as e:
-            logger.debug(f"Error fetching resources with no selectors: {e}")
+    try:
+        # Single API call to get all resources
+        all_resources = api_list_call()
+        if not all_resources or not all_resources.items:
             return None
 
-    # Process all label selectors
-    for label_selector in label_selectors:
-        fetched = api_call(label_selector, None)
-        if fetched and fetched.items:
-            all_resources.extend(fetched.items)
-        # Get a container object from any successful call
-        # TODO - remove need for this hacky container / type reference
-        if fetched and not resource_container:
-            resource_container = fetched
-            resource_container.items = []
+        # Simple filtering: loop through labels to see if they match any selector
+        if label_selectors or field_selectors:
+            filtered_resources = []
+            for resource in all_resources.items:
+                resource_labels = getattr(resource.metadata, "labels", {}) or {}
+                matched = False
 
-    # Process all field selectors
-    for field_selector in field_selectors:
-        fetched = api_call(None, field_selector)
-        if fetched and fetched.items:
-            all_resources.extend(fetched.items)
-        # Get a container object from any successful call
-        # TODO - remove need for this hacky container / type reference
-        if fetched and not resource_container:
-            resource_container = fetched
-            resource_container.items = []
+                # Check if any label selector matches
+                for selector in label_selectors:
+                    # Simple check - if selector contains label key-value pairs that match
+                    if any(f"{k}={v}" in selector or f"{k} in ({v})" in selector for k, v in resource_labels.items()):
+                        filtered_resources.append(resource)
+                        matched = True
+                        break
 
-    # Return the container with all collected resources
-    if resource_container:
-        resource_container.items = all_resources
-        # TODO - do we need to deduplicate resources that may share labels between selectors
-        return resource_container
+                # Only check field selectors if we haven't already matched on labels
+                if not matched:
+                    for selector in field_selectors:
+                        if _matches_field_selector(resource, selector):
+                            filtered_resources.append(resource)
+                            break
 
-    return None
+            all_resources.items = filtered_resources
+
+        return all_resources
+
+    except Exception as e:
+        logger.debug(f"Error fetching resources: {e}")
+        return None
 
 
 def bundle_cluster_resources_by_type(resource_type: Union[str, BundleResourceKind]) -> Dict[str, Union[dict, str]]:
@@ -847,12 +859,10 @@ def bundle_cluster_resources_by_type(resource_type: Union[str, BundleResourceKin
 
     # Collect label and field selectors from service modules
     label_selectors, field_selectors = _collect_selectors_for_resource_type(resource_type_str)
-    if not label_selectors and not field_selectors:
-        return {}
 
-    # Fetch resources with multiple API calls (for OR logic) and deduplicate
+    # Fetch resources with single API call and filter
     items = _fetch_grouped_resources_by_selectors(
-        api_call=resource_config["api_call"], label_selectors=label_selectors, field_selectors=field_selectors
+        api_list_call=resource_config["api_list_call"], label_selectors=label_selectors, field_selectors=field_selectors
     )
 
     # Create bundle entry
