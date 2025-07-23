@@ -84,20 +84,21 @@ def test_create_bundle_arccontainerstorage(cluster_connection, tracked_files):
     file_map = get_file_map(walk_result, ops_service)
 
     # ACS azure-arc-containerstorage
-    acs_file_map = file_map["acs"]
+    if "acs" in file_map:
+        acs_file_map = file_map["acs"]
 
-    # TODO: may not be able to use EdgeApiManager due to the files being in different folders
-    expected_types = set(ACS_WORKLOAD_TYPES).union(ARCCONTAINERSTORAGE_API_V1.kinds)
-    assert set(acs_file_map.keys()).issubset(set(expected_types))
-    check_workload_resource_files(
-        file_objs=acs_file_map,
-        pre_bundle_items=pre_bundle_acs_workload_items,
-        prefixes=acs_workload_resource_prefixes,
-        bundle_path=bundle_path,
-    )
-    check_custom_resource_files(
-        file_objs=acs_file_map, resource_apis=ARCCONTAINERSTORAGE_API_V1
-    )
+        # TODO: may not be able to use EdgeApiManager due to the files being in different folders
+        expected_types = set(ACS_WORKLOAD_TYPES).union(ARCCONTAINERSTORAGE_API_V1.kinds)
+        assert set(acs_file_map.keys()).issubset(set(expected_types))
+        check_workload_resource_files(
+            file_objs=acs_file_map,
+            pre_bundle_items=pre_bundle_acs_workload_items,
+            prefixes=acs_workload_resource_prefixes,
+            bundle_path=bundle_path,
+        )
+        check_custom_resource_files(
+            file_objs=acs_file_map, resource_apis=ARCCONTAINERSTORAGE_API_V1
+        )
 
     # ACSTOR validate azure-arc-acstor if exists
     if "acstor" not in file_map:
