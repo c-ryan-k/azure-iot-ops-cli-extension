@@ -1,5 +1,5 @@
 # coding=utf-8
-# ----------------------------------------------------------------------------------------------
+# ------------------------------------------------------------------------------------------        expected_types = set(ACSTOR_WORKLOAD_TYPES).union(CONTAINERSTORAGE_API_V1.kinds or [])---
 # Copyright (c) Microsoft Corporation. All rights reserved.
 # Licensed under the MIT License. See License file in the project root for license information.
 # ----------------------------------------------------------------------------------------------
@@ -105,7 +105,7 @@ def test_create_bundle_arccontainerstorage(cluster_connection, tracked_files):
         return
 
     acstor_file_map = file_map["acstor"]
-    expected_types = set(ACSTOR_WORKLOAD_TYPES).union(CONTAINERSTORAGE_API_V1.kinds)
+    expected_types = set(ACSTOR_WORKLOAD_TYPES).union(CONTAINERSTORAGE_API_V1.kinds or [])
     assert set(acstor_file_map.keys()).issubset(set(expected_types))
 
     check_workload_resource_files(
