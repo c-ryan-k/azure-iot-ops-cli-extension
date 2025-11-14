@@ -1402,7 +1402,7 @@ def test_clone_deploy_params(
     assert deploy_body_payload["properties"]["template"]
 
 
-@pytest.mark.parametrize("linked_base_uri", [None, f"https://{generate_uuid()}.test"])
+@pytest.mark.parametrize("linked_base_uri", [None, "https://test-uuid-for-xdist.test"])
 @pytest.mark.parametrize("template_mode", [TemplateMode.NESTED, TemplateMode.LINKED])
 @pytest.mark.parametrize("add_aeps", [100, LOAD_VALUE])
 @pytest.mark.parametrize("add_assets", [100, LOAD_VALUE])

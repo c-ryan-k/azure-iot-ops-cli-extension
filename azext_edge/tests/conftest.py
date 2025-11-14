@@ -17,12 +17,13 @@ def pytest_configure(config):
     config.addinivalue_line("markers", "init_scenario_test: mark tests that will run az iot ops init.")
     config.addinivalue_line("markers", "no_global_setup: mark tests that will not use global setup.")
     
-    # Seed random generators to ensure consistent test collection across pytest-xdist workers
+    # Seed random generators to ensure consistent test collection across pytest-xdist workers.
     # This is necessary because some tests use generate_random_string() in @pytest.mark.parametrize
     # decorators, which get evaluated during test collection. Without a consistent seed, each
     # worker would generate different random values, leading to test collection mismatches.
-    # We replace secrets.choice with random.choice so it can be seeded.
     random.seed(42)
+    
+    # Replace secrets.choice with random.choice so it can be seeded
     secrets.choice = random.choice
 
 
