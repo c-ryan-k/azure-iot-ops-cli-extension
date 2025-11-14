@@ -7,9 +7,25 @@
 import secrets
 import string
 from typing import List, Optional, Union
-from uuid import uuid4
+from uuid import UUID, uuid4
 
 BASE_URL = "https://management.azure.com"
+
+
+def generate_seeded_uuid() -> str:
+    """
+    Generate a UUID using the seeded random module.
+    
+    This is useful for test parametrization where we need consistent UUIDs across
+    pytest-xdist workers. Unlike uuid4() which uses OS randomness and cannot be seeded,
+    this generates a UUID from the seeded random.Random generator.
+    
+    Note: Only use this in test parametrization. For runtime test data, use generate_uuid().
+    """
+    from random import randint
+    # Generate 16 random bytes using the seeded random module
+    random_bytes = bytes([randint(0, 255) for _ in range(16)])
+    return str(UUID(bytes=random_bytes, version=4))
 
 
 def generate_names(prefix: str = "", count: int = 1, max_length: int = 48) -> Union[str, List[str]]:

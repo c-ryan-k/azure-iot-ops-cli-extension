@@ -66,6 +66,7 @@ from azext_edge.edge.util.machinery import scoped_semver_import
 from ...generators import (
     generate_random_string,
     generate_resource_id,
+    generate_seeded_uuid,
     generate_uuid,
     get_zeroed_subscription,
 )
@@ -1402,7 +1403,7 @@ def test_clone_deploy_params(
     assert deploy_body_payload["properties"]["template"]
 
 
-@pytest.mark.parametrize("linked_base_uri", [None, "https://test-uuid-for-xdist.test"])
+@pytest.mark.parametrize("linked_base_uri", [None, f"https://{generate_seeded_uuid()}.test"])
 @pytest.mark.parametrize("template_mode", [TemplateMode.NESTED, TemplateMode.LINKED])
 @pytest.mark.parametrize("add_aeps", [100, LOAD_VALUE])
 @pytest.mark.parametrize("add_assets", [100, LOAD_VALUE])

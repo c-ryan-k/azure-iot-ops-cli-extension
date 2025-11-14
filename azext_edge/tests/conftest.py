@@ -13,17 +13,22 @@ import pytest
 import responses
 
 
-def pytest_configure(config):
-    config.addinivalue_line("markers", "init_scenario_test: mark tests that will run az iot ops init.")
-    config.addinivalue_line("markers", "no_global_setup: mark tests that will not use global setup.")
+def _setup_deterministic_random_for_xdist():
+    """
+    Setup deterministic random generation for pytest-xdist compatibility.
     
-    # Seed random generators to ensure consistent test collection across pytest-xdist workers.
-    # This is necessary because some tests use generate_random_string() in @pytest.mark.parametrize
-    # decorators, which get evaluated during test collection. Without a consistent seed, each
-    # worker would generate different random values, leading to test collection mismatches.
-    #
-    # The seed is generated randomly for each test run (using current time) unless explicitly set
-    # via PYTEST_RANDOMLY_SEED environment variable for reproducibility.
+    This ensures consistent test collection across pytest-xdist workers by seeding
+    the random generators. Some tests use generate_random_string() in @pytest.mark.parametrize
+    decorators, which get evaluated during test collection. Without a consistent seed,
+    each worker would generate different random values, leading to test collection mismatches.
+    
+    The seed is generated randomly for each test run (using current time) unless explicitly
+    set via PYTEST_RANDOMLY_SEED environment variable for reproducibility.
+    
+    Security: This only affects test data generation and does not impact production code.
+    The use of time-based seeding for tests is acceptable as it provides both randomization
+    across runs and reproducibility when needed.
+    """
     import time
     
     # Only generate a new seed in the main process (not in xdist workers)
@@ -42,7 +47,16 @@ def pytest_configure(config):
         print(f"\nUsing random seed: {seed} (set PYTEST_RANDOMLY_SEED={seed} to reproduce)")
     
     # Replace secrets.choice with random.choice so it can be seeded
+    # This is safe for tests as we're not using these for cryptographic purposes
     secrets.choice = random.choice
+
+
+def pytest_configure(config):
+    config.addinivalue_line("markers", "init_scenario_test: mark tests that will run az iot ops init.")
+    config.addinivalue_line("markers", "no_global_setup: mark tests that will not use global setup.")
+    
+    # Setup deterministic random generation for pytest-xdist
+    _setup_deterministic_random_for_xdist()
 
 
 # Sets current working directory to the directory of the executing file
