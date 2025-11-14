@@ -21,7 +21,11 @@ def pytest_configure(config):
     # This is necessary because some tests use generate_random_string() in @pytest.mark.parametrize
     # decorators, which get evaluated during test collection. Without a consistent seed, each
     # worker would generate different random values, leading to test collection mismatches.
-    random.seed(42)
+    #
+    # The seed can be controlled via PYTEST_RANDOMLY_SEED environment variable or --randomly-seed option
+    # to enable different random values across test runs while maintaining xdist compatibility.
+    seed = int(os.environ.get('PYTEST_RANDOMLY_SEED', '42'))
+    random.seed(seed)
     
     # Replace secrets.choice with random.choice so it can be seeded
     secrets.choice = random.choice
