@@ -22,10 +22,24 @@ def pytest_configure(config):
     # decorators, which get evaluated during test collection. Without a consistent seed, each
     # worker would generate different random values, leading to test collection mismatches.
     #
-    # The seed can be controlled via PYTEST_RANDOMLY_SEED environment variable or --randomly-seed option
-    # to enable different random values across test runs while maintaining xdist compatibility.
+    # The seed is generated randomly for each test run (using current time) unless explicitly set
+    # via PYTEST_RANDOMLY_SEED environment variable for reproducibility.
+    import time
+    
+    # Only generate a new seed in the main process (not in xdist workers)
+    # Workers will inherit the seed from the main process via environment
+    if 'PYTEST_RANDOMLY_SEED' not in os.environ:
+        if os.environ.get('PYTEST_XDIST_WORKER') is None:
+            # Main process: generate and set seed
+            generated_seed = int(time.time() * 1000) % (2**31)
+            os.environ['PYTEST_RANDOMLY_SEED'] = str(generated_seed)
+    
     seed = int(os.environ.get('PYTEST_RANDOMLY_SEED', '42'))
     random.seed(seed)
+    
+    # Print the seed so test runs can be reproduced if needed (only in main process)
+    if os.environ.get('PYTEST_XDIST_WORKER') is None:
+        print(f"\nUsing random seed: {seed} (set PYTEST_RANDOMLY_SEED={seed} to reproduce)")
     
     # Replace secrets.choice with random.choice so it can be seeded
     secrets.choice = random.choice
