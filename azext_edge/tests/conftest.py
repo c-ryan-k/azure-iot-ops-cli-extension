@@ -17,17 +17,9 @@ def _setup_deterministic_random_for_xdist():
     """
     Setup deterministic random generation for pytest-xdist compatibility.
     
-    This ensures consistent test collection across pytest-xdist workers by seeding
-    the random generators. Some tests use generate_random_string() in @pytest.mark.parametrize
-    decorators, which get evaluated during test collection. Without a consistent seed,
-    each worker would generate different random values, leading to test collection mismatches.
-    
-    The seed is generated randomly for each test run (using current time) unless explicitly
-    set via PYTEST_RANDOMLY_SEED environment variable for reproducibility.
-    
-    Security: This only affects test data generation and does not impact production code.
-    The use of time-based seeding for tests is acceptable as it provides both randomization
-    across runs and reproducibility when needed.
+    Seeds the random generators to ensure consistent test collection across all workers.
+    A new random seed is generated for each test run, but can be set explicitly via 
+    PYTEST_RANDOMLY_SEED environment variable for reproducibility.
     """
     import time
     
